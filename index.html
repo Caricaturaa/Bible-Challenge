@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<title>Bible Challenge</title>
+<style>
+:root{--bg:#0c1422;--panel:#152236;--panel2:#1c2d44;--gold:#e6c675;--cream:#f7f3e9;--muted:#aebbd0;--green:#82c5a2;--line:#2b3d56}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#1b2c43 0,#0c1422 55%);color:var(--cream);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+main{max-width:720px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 16px calc(30px + env(safe-area-inset-bottom))}
+header{text-align:center;padding:20px 8px 18px} .cross{font-size:34px;color:var(--gold)} h1{font-size:29px;margin:6px 0 4px;letter-spacing:.5px} .sub{color:var(--muted);font-size:14px}
+.card{background:rgba(21,34,54,.96);border:1px solid var(--line);border-radius:20px;padding:18px;margin:13px 0;box-shadow:0 10px 28px #0002}
+h2{font-size:18px;margin:0 0 14px} label{display:block;font-size:13px;color:var(--muted);margin:11px 0 6px}
+input,select,textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:13px;background:#0d1828;color:var(--cream);font:inherit;outline:none} textarea{min-height:120px;resize:vertical}
+.row{display:flex;gap:10px}.row>*{flex:1;min-width:0}
+button{border:0;border-radius:13px;padding:14px 16px;font-weight:700;font-size:15px;cursor:pointer;background:var(--gold);color:#182033;width:100%;margin-top:12px}
+button.secondary{background:var(--panel2);color:var(--cream);border:1px solid var(--line)}button:disabled{opacity:.45}
+.pill{display:inline-block;border:1px solid #7b6835;border-radius:999px;padding:5px 10px;color:var(--gold);font-size:12px}
+.verse{font-family:Georgia,serif;font-size:22px;line-height:1.5;margin:12px 0;color:#fff4d6}.ref{color:var(--gold);font-weight:700}
+.timer{font-size:48px;text-align:center;font-variant-numeric:tabular-nums;font-weight:750;letter-spacing:1px;margin:10px 0;color:var(--gold)}
+.note{font-size:13px;color:var(--muted);line-height:1.5}.hidden{display:none!important}.status{padding:11px 12px;border-radius:12px;background:#102c28;color:#a8e0c6;font-size:13px;margin-top:10px}
+.steps{display:flex;gap:6px;margin:14px 0}.step{height:4px;flex:1;border-radius:9px;background:#2b3d56}.step.active{background:var(--gold)}
+footer{text-align:center;color:#8392a9;font-size:12px;padding:15px 8px}
+@media(min-width:600px){.twocol{display:grid;grid-template-columns:1fr 1fr;gap:12px}}
+</style>
+</head>
+<body><main>
+<header><div class="cross">✝</div><h1>BIBLE CHALLENGE</h1><div class="sub" id="tagline">One phone. One verse. Two preachers.</div><div style="margin-top:12px"><span class="pill" id="offlinePill">OFFLINE GAME MODE</span></div></header>
+<div class="steps"><div class="step active" id="s1"></div><div class="step" id="s2"></div><div class="step" id="s3"></div><div class="step" id="s4"></div></div>
+<section class="card" id="setup">
+<h2 id="setupTitle">Start a challenge</h2>
+<div class="row"><div><label id="labP1">Player 1</label><input id="p1" value="Player 1" maxlength="28"></div><div><label id="labP2">Player 2</label><input id="p2" value="Player 2" maxlength="28"></div></div>
+<div class="row"><div><label id="labLang">App language</label><select id="lang"><option value="en">English</option><option value="es">Español</option></select></div><div><label id="labTrans">Bible translation</label><select id="trans"><option>KJV</option><option>RVR1960</option></select></div></div>
+<label id="labCat">Verse category</label><select id="cat"><option value="random">Surprise me / Sorpresa</option><option value="faith">Faith / Fe</option><option value="prayer">Prayer / Oración</option><option value="courage">Courage / Valentía</option><option value="love">Love / Amor</option><option value="wisdom">Wisdom / Sabiduría</option></select>
+<button id="startBtn">Choose verse & start</button>
+<div class="note" id="setupNote">Your names, notes, and round progress are saved on this device. AI evaluation needs internet and is not connected in this prototype.</div>
+</section>
+<section class="card hidden" id="verseCard"><h2 id="verseTitle">Today's challenge</h2><div class="ref" id="verseRef"></div><div class="verse" id="verseText"></div><div class="note" id="verseNote"></div><button id="beginBtn">Begin Player 1's preparation</button></section>
+<section class="card hidden" id="prepCard">
+<div class="pill" id="turnPill">PLAYER 1 PREPARATION</div><h2 id="prepTitle">Prepare your sermon</h2><div class="timer" id="timer">10:00</div><div class="note" id="timerHint">When the timer ends, save your notes and take a photo of your written sermon.</div>
+<label id="notesLabel">Optional private outline / notes</label><textarea id="notes" placeholder="Introduction, context, main points, application, conclusion..."></textarea>
+<div class="row"><button id="timerStart">Start 10 minutes</button><button class="secondary" id="timerPause">Pause</button></div>
+<button class="secondary" id="skipTimer">Finish preparation early</button>
+</section>
+<section class="card hidden" id="photoCard"><h2 id="photoTitle">Save your sermon</h2><div class="note" id="photoHint">Take a clear photo of your handwritten sermon, or choose an image. Keep the writing readable.</div>
+<label id="photoLabel">Sermon photo</label><input id="photoInput" type="file" accept="image/*" capture="environment">
+<img id="photoPreview" class="hidden" alt="Sermon photo preview" style="width:100%;max-height:300px;object-fit:contain;border-radius:12px;margin-top:12px">
+<button id="savePlayerBtn">Save and continue</button></section>
+<section class="card hidden" id="handoffCard"><h2 id="handoffTitle">Pass the phone</h2><p id="handoffText" class="note">Hand the phone to Player 2. Player 1's notes are hidden.</p><button id="handoffBtn">Start Player 2</button></section>
+<section class="card hidden" id="reviewCard"><h2 id="reviewTitle">Both sermons saved</h2><div class="status" id="savedStatus">Both players' submissions are saved on this device.</div><p class="note" id="reviewText">Connect to the internet to submit both sermon photos for AI evaluation. The prototype does not yet send photos or produce AI scores.</p>
+<button id="aiBtn">Prepare AI evaluation</button><button class="secondary" id="newRoundBtn">Start a new round</button><div id="aiMessage" class="note" style="margin-top:12px"></div></section>
+<footer>Built to help players study Scripture with humility. AI feedback should be checked against the Bible and respected Christian traditions.</footer>
+</main>
+<script>
+const verses=[
+ {cat:"faith",ref:"Hebrews 11:1",kjv:"Now faith is the substance of things hoped for, the evidence of things not seen.",esRef:"Hebreos 11:1"},
+ {cat:"prayer",ref:"Philippians 4:6",kjv:"Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God.",esRef:"Filipenses 4:6"},
+ {cat:"courage",ref:"Joshua 1:9",kjv:"Have not I commanded thee? Be strong and of a good courage; be not afraid, neither be thou dismayed: for the LORD thy God is with thee whithersoever thou goest.",esRef:"Josué 1:9"},
+ {cat:"love",ref:"1 Corinthians 13:4",kjv:"Charity suffereth long, and is kind; charity envieth not; charity vaunteth not itself, is not puffed up.",esRef:"1 Corintios 13:4"},
+ {cat:"wisdom",ref:"Proverbs 3:5",kjv:"Trust in the LORD with all thine heart; and lean not unto thine own understanding.",esRef:"Proverbios 3:5"},
+ {cat:"faith",ref:"Romans 10:17",kjv:"So then faith cometh by hearing, and hearing by the word of God.",esRef:"Romanos 10:17"},
+ {cat:"prayer",ref:"1 Thessalonians 5:17",kjv:"Pray without ceasing.",esRef:"1 Tesalonicenses 5:17"},
+ {cat:"love",ref:"John 13:34",kjv:"A new commandment I give unto you, That ye love one another; as I have loved you, that ye also love one another.",esRef:"Juan 13:34"}
+];
+const $=id=>document.getElementById(id);
+let state={phase:"setup",players:[],index:0,verse:null,submissions:[null,null],remaining:600,running:false,deadline:0,interval:null,photoData:null};
+const copy={
+en:{tagline:"One phone. One verse. Two preachers.",setupTitle:"Start a challenge",start:"Choose verse & start",verseTitle:"Today's challenge",begin:"Begin Player 1's preparation",prep:"Prepare your sermon",hint:"When the timer ends, save your notes and take a photo of your written sermon.",notes:"Optional private outline / notes",startTimer:"Start 10 minutes",pause:"Pause",early:"Finish preparation early",photo:"Save your sermon",photoHint:"Take a clear photo of your handwritten sermon, or choose an image. Keep the writing readable.",photoLabel:"Sermon photo",save:"Save and continue",handoff:"Pass the phone",handoffText:"Hand the phone to Player 2. Player 1's notes are hidden.",startP2:"Start Player 2",review:"Both sermons saved",reviewText:"Connect to the internet to submit both sermon photos for AI evaluation. The prototype does not yet send photos or produce AI scores.",ai:"Prepare AI evaluation",new:"Start a new round",private:"Your names, notes, and round progress are saved on this device. AI evaluation needs internet and is not connected in this prototype.",timerHint:"When the timer ends, save your notes and take a photo of your written sermon.",choose:"Choose verse & start",turn:"PREPARATION",offline:"OFFLINE GAME MODE",saved:"Both players' submissions are saved on this device."},
+es:{tagline:"Un teléfono. Un versículo. Dos predicadores.",setupTitle:"Comenzar un desafío",start:"Elegir versículo y comenzar",verseTitle:"El desafío de hoy",begin:"Comenzar preparación del Jugador 1",prep:"Prepara tu prédica",hint:"Cuando termine el tiempo, guarda tus notas y toma una foto de tu prédica escrita.",notes:"Bosquejo o notas privadas (opcional)",startTimer:"Comenzar 10 minutos",pause:"Pausar",early:"Terminar preparación antes",photo:"Guardar tu prédica",photoHint:"Toma una foto clara de tu prédica escrita o elige una imagen. Asegúrate de que se lea bien.",photoLabel:"Foto de la prédica",save:"Guardar y continuar",handoff:"Pasa el teléfono",handoffText:"Entrega el teléfono al Jugador 2. Las notas del Jugador 1 están ocultas.",startP2:"Comenzar Jugador 2",review:"Ambas prédicas guardadas",reviewText:"Conéctate a internet para enviar ambas fotos a la IA. Este prototipo todavía no envía fotos ni genera puntuaciones de IA.",ai:"Preparar evaluación de IA",new:"Comenzar otra ronda",private:"Los nombres, notas y progreso se guardan en este dispositivo. La evaluación de IA requiere internet y aún no está conectada.",timerHint:"Cuando termine el tiempo, guarda tus notas y toma una foto de tu prédica escrita.",choose:"Elegir versículo y comenzar",turn:"PREPARACIÓN",offline:"JUEGO SIN CONEXIÓN",saved:"Las entregas de ambos jugadores están guardadas en este dispositivo."}
+};
+function L(){return copy[$("lang").value]||copy.en}
+function show(id){["setup","verseCard","prepCard","photoCard","handoffCard","reviewCard"].forEach(x=>$(x).classList.toggle("hidden",x!==id));let n={setup:1,verseCard:2,prepCard:2,photoCard:3,handoffCard:3,reviewCard:4}[id];["s1","s2","s3","s4"].forEach((x,i)=>$(x).classList.toggle("active",i<n))}
+function syncLabels(){let l=L();$("tagline").textContent=l.tagline;$("setupTitle").textContent=l.setupTitle;$("startBtn").textContent=l.start;$("verseTitle").textContent=l.verseTitle;$("beginBtn").textContent=l.begin;$("prepTitle").textContent=l.prep;$("timerHint").textContent=l.hint;$("notesLabel").textContent=l.notes;$("timerStart").textContent=l.startTimer;$("timerPause").textContent=l.pause;$("skipTimer").textContent=l.early;$("photoTitle").textContent=l.photo;$("photoHint").textContent=l.photoHint;$("photoLabel").textContent=l.photoLabel;$("savePlayerBtn").textContent=l.save;$("handoffTitle").textContent=l.handoff;$("handoffText").textContent=l.handoffText;$("handoffBtn").textContent=l.startP2;$("reviewTitle").textContent=l.review;$("reviewText").textContent=l.reviewText;$("aiBtn").textContent=l.ai;$("newRoundBtn").textContent=l.new;$("setupNote").textContent=l.private;$("offlinePill").textContent=l.offline;$("savedStatus").textContent=l.saved}
+$("lang").addEventListener("change",syncLabels);
+function saveLocal(){try{localStorage.setItem("bibleChallengeState",JSON.stringify({players:state.players,verse:state.verse,submissions:state.submissions,lang:$("lang").value,trans:$("trans").value,cat:$("cat").value}))}catch(e){}}
+function start(){state.players=[$("p1").value.trim()||"Player 1",$("p2").value.trim()||"Player 2"];let cat=$("cat").value;let pool=cat==="random"?verses:verses.filter(v=>v.cat===cat);state.verse=pool[Math.floor(Math.random()*pool.length)];state.submissions=[null,null];state.index=0;state.remaining=600;let tr=$("trans").value;let lang=$("lang").value;$("verseRef").textContent=lang==="es"?state.verse.esRef:state.verse.ref;if(tr==="KJV"){$("verseText").textContent=state.verse.kjv;$("verseNote").textContent=lang==="es"?"Texto KJV en inglés para esta versión inicial.":"KJV text. Check the surrounding chapter before preparing."; }else{$("verseText").textContent=lang==="es"?"Referencia seleccionada: "+state.verse.esRef:"Selected reference: "+state.verse.ref;$("verseNote").textContent="RVR1960 text needs a properly licensed source. This prototype shows the reference rather than reproducing copyrighted translation text."}saveLocal();show("verseCard")}
+$("startBtn").addEventListener("click",start);
+function beginPrep(){state.remaining=600;$("notes").value="";$("turnPill").textContent=state.players[state.index].toUpperCase()+" — "+L().turn;$("timer").textContent="10:00";$("notes").placeholder=state.index===0?"Write your own sermon outline. Player 2 should not look.":"Write your own sermon outline. Player 1 should not look.";show("prepCard")}
+$("beginBtn").addEventListener("click",beginPrep);
+function drawTimer(){let s=Math.max(0,state.remaining);$("timer").textContent=String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");if(s<=0){pauseTimer();$("timerHint").textContent="Time is up! Save your notes and take a photo of your sermon."}}
+function pauseTimer(){state.running=false;if(state.interval)clearInterval(state.interval);state.interval=null}
+$("timerStart").addEventListener("click",()=>{if(state.running)return;state.running=true;state.deadline=Date.now()+state.remaining*1000;state.interval=setInterval(()=>{state.remaining=Math.max(0,Math.ceil((state.deadline-Date.now())/1000));drawTimer();if(state.remaining<=0)pauseTimer()},250)});
+$("timerPause").addEventListener("click",()=>{if(state.running){state.remaining=Math.max(0,Math.ceil((state.deadline-Date.now())/1000));pauseTimer();drawTimer()}});
+$("skipTimer").addEventListener("click",()=>{pauseTimer();$("photoPreview").classList.add("hidden");$("photoInput").value="";state.photoData=null;show("photoCard")});
+$("photoInput").addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const url=URL.createObjectURL(f);$("photoPreview").src=url;$("photoPreview").classList.remove("hidden");state.photoData=f});
+$("savePlayerBtn").addEventListener("click",()=>{let notes=$("notes").value;state.submissions[state.index]={notes:notes,photoName:state.photoData&&state.photoData.name||null,savedAt:new Date().toISOString()};saveLocal();if(state.index===0){show("handoffCard")}else{show("reviewCard")}});
+$("handoffBtn").addEventListener("click",()=>{state.index=1;beginPrep()});
+$("aiBtn").addEventListener("click",()=>{$("aiMessage").textContent="Prototype note: AI is not connected yet. The next implementation step is a secure backend that uploads both photos only after you consent, then returns evidence-based feedback. Do not treat a score as a final authority on doctrine.";});
+$("newRoundBtn").addEventListener("click",()=>{pauseTimer();state={...state,phase:"setup",players:[],index:0,verse:null,submissions:[null,null],remaining:600,running:false,deadline:0,interval:null,photoData:null};$("aiMessage").textContent="";$("photoPreview").classList.add("hidden");show("setup")});
+syncLabels();
+</script></body></html>
