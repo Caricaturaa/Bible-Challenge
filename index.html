@@ -1105,15 +1105,6 @@ auth$('changePasswordForm').addEventListener('submit',async e=>{
 })();
 
 })();
-// Animated splash progress and smooth fade transitions; progress completes when app startup is ready.
-(function showGameSplash(){
-  const splash=document.getElementById('gameSplash');if(!splash)return;
-  const bar=document.getElementById('splashProgressBar'),label=document.getElementById('splashProgressLabel');
-  let progress=0;const started=Date.now();
-  const tick=setInterval(()=>{const elapsed=Date.now()-started;progress=Math.min(100,Math.round((elapsed/1550)*100));if(bar)bar.style.width=progress+'%';if(label)label.textContent=(lang==='es'?'CARGANDO ':'LOADING ')+progress+'%';if(progress>=100){clearInterval(tick);setTimeout(()=>{splash.classList.add('splash-hidden');window.dispatchEvent(new Event('bible-challenge-splash-hidden'));},180);}},30);
-  setTimeout(()=>{clearInterval(tick);if(bar)bar.style.width='100%';if(label)label.textContent=(lang==='es'?'CARGANDO 100%':'LOADING 100%');splash.classList.add('splash-hidden');window.dispatchEvent(new Event('bible-challenge-splash-hidden'));},3200);
-})();
-
 // Subtle offline click sounds for buttons and selections, with a Settings toggle.
 (function clickSounds(){
  let audioCtx=null;
@@ -1122,6 +1113,39 @@ auth$('changePasswordForm').addEventListener('submit',async e=>{
  document.addEventListener('click',e=>{const target=e.target.closest('button,a,select,input[type=checkbox],input[type=radio]');if(target&&!target.disabled)play();});
 })();
 
+</script>
+
+<script>
+// Independent fail-safe splash controller: one animated bar, then always continue to language choice.
+(function(){
+  function startSplash(){
+    var splash=document.getElementById('gameSplash');
+    if(!splash || splash.dataset.controllerStarted==='yes') return;
+    splash.dataset.controllerStarted='yes';
+    var bar=document.getElementById('splashProgressBar');
+    var label=document.getElementById('splashProgressLabel');
+    var gate=document.getElementById('languageGate');
+    var start=Date.now(), finished=false;
+    function finish(){
+      if(finished)return; finished=true;
+      if(bar)bar.style.width='100%';
+      if(label)label.textContent=(localStorage.getItem('bibleChallengeLanguage')==='es'?'CARGANDO 100%':'LOADING 100%');
+      splash.classList.add('splash-hidden');
+      if(gate)gate.classList.remove('hidden');
+      window.dispatchEvent(new Event('bible-challenge-splash-hidden'));
+    }
+    var timer=setInterval(function(){
+      var pct=Math.min(100,Math.round((Date.now()-start)/1600*100));
+      if(bar)bar.style.width=pct+'%';
+      if(label)label.textContent=(localStorage.getItem('bibleChallengeLanguage')==='es'?'CARGANDO ':'LOADING ')+pct+'%';
+      if(pct>=100){clearInterval(timer);setTimeout(finish,180);}
+    },35);
+    // Failsafe in case the progress interval is interrupted by a browser issue.
+    setTimeout(function(){clearInterval(timer);finish();},2600);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startSplash,{once:true});
+  else startSplash();
+})();
 </script>
 </body>
 </html>
