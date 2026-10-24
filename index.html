@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="color-scheme" content="dark">
-<meta name="description" content="Bible Challenge — a modern bilingual Bible-based sermon game.">
+<meta name="description" content="Bible Challenge — a bilingual Christian app for Scripture, fellowship, and Bible challenges.">
 <title>Bible Challenge — Free Edition</title>
 <style>
 :root{--bg:#101827;--panel:#192438;--panel2:#202e45;--gold:#f4c76b;--text:#f6f3eb;--muted:#bac5d5;--line:#35445d;--green:#9be0b1;--red:#ffb4a9}
@@ -359,6 +359,42 @@ body[data-theme="mono"] .main-menu-actions button strong,body[data-theme="mono"]
 body[data-theme="mono"] .donate-link{background:#202020;color:#fff;border-color:#aaa}
 body[data-theme="emerald"] .donate-link,body[data-theme="classic"] .donate-link{background:#23794f;color:#fff}
 body[data-theme="emerald"] .sponsor-credit strong,body[data-theme="classic"] .sponsor-credit strong,body[data-theme="mono"] .sponsor-credit strong{color:var(--gold)}
+
+/* iPhone-inspired translucent glass app home and separate Game Room */
+:root{--glass-line:rgba(239,211,143,.30);--glass-fill:rgba(255,255,255,.065);--glass-highlight:rgba(255,255,255,.11)}
+body{background:radial-gradient(ellipse at 50% -12%,rgba(88,119,171,.32),transparent 48%),radial-gradient(circle at 88% 28%,rgba(225,190,105,.10),transparent 28%),linear-gradient(155deg,#0b1425,#080d18 70%);}
+#homeScreen{background:rgba(19,30,49,.52)!important;border:1px solid rgba(255,255,255,.10)!important;border-radius:30px!important;padding:clamp(17px,4vw,30px)!important;box-shadow:0 22px 70px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.07)!important;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.main-menu-brand{justify-content:flex-start!important;text-align:left!important;gap:15px!important;margin-bottom:22px!important}
+.main-menu-brand img{width:66px!important;height:66px!important;border-radius:22px;filter:drop-shadow(0 5px 18px rgba(245,199,109,.18))}
+.main-menu-brand h2{letter-spacing:.045em!important;font-size:clamp(22px,4vw,30px)!important}
+.daily-feature{background:linear-gradient(135deg,rgba(255,255,255,.105),rgba(255,255,255,.035))!important;border:1px solid rgba(235,204,131,.35)!important;border-radius:25px!important;padding:22px!important;margin:16px 0 23px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.11),0 14px 35px rgba(0,0,0,.13)!important;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.daily-feature h3{letter-spacing:.12em;font-size:11px!important}
+.daily-feature .daily-feature-text{font-size:clamp(19px,3vw,24px)!important;line-height:1.55!important}
+.daily-feature .daily-feature-ref{font-size:13px}
+.main-menu-actions{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;margin:22px 0!important}
+.main-menu-actions button{position:relative;min-height:116px!important;padding:17px!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-start!important;gap:10px!important;text-align:left!important;border-radius:24px!important;border:1px solid rgba(235,204,131,.31)!important;background:linear-gradient(145deg,rgba(255,255,255,.105),rgba(255,255,255,.035))!important;color:#fff!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 9px 24px rgba(0,0,0,.13)!important;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transition:background .18s ease,transform .18s ease,border-color .18s ease!important}
+.main-menu-actions button:hover{background:linear-gradient(145deg,rgba(224,190,108,.20),rgba(255,255,255,.055))!important;border-color:rgba(240,211,145,.58)!important;transform:translateY(-2px)!important}
+.main-menu-actions button .menu-action-icon{display:grid;place-items:center;width:39px;height:39px;min-width:39px!important;border-radius:15px;background:rgba(218,183,98,.16);border:1px solid rgba(235,204,131,.27);font-size:20px!important;color:#f0d99a!important}
+.main-menu-actions button strong{font-size:15px!important;line-height:1.3;color:#fff!important}
+.main-menu-actions button small{font-size:11px!important;line-height:1.4;color:#c5cfdf!important;margin-top:3px}
+.main-menu-actions button:after{content:none!important}
+.main-menu-actions button:last-child{grid-column:1/-1;min-height:65px!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;background:rgba(255,255,255,.035)!important;border-color:rgba(255,255,255,.13)!important}
+.main-menu-actions button:last-child .menu-action-icon{width:35px;height:35px;min-width:35px!important}
+.menu-community{border-top:1px solid rgba(255,255,255,.12)!important;padding-top:19px!important;margin-top:20px!important}
+.sponsor-credit{color:#bfc9d8!important;letter-spacing:.06em;font-size:10px!important}
+.community-actions{display:grid!important;grid-template-columns:1fr 1fr;gap:10px!important;margin:14px 0 0!important}
+.community-actions .menu-link{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:12px 14px;border-radius:999px!important;border:1px solid rgba(255,255,255,.16)!important;background:rgba(255,255,255,.07)!important;color:#edf2fa!important;text-decoration:none!important;font-size:13px;font-weight:750;box-shadow:inset 0 1px 0 rgba(255,255,255,.10);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px)}
+.community-actions .donate-link{background:rgba(0,214,50,.88)!important;color:#06250d!important;border-color:rgba(104,255,139,.6)!important}
+.game-room-panel{background:rgba(19,30,49,.58)!important;border:1px solid rgba(255,255,255,.11)!important;border-radius:28px!important;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.game-room-heading{display:flex;align-items:center;gap:13px;margin:22px 0 8px}.game-room-heading h2{font-size:clamp(25px,4vw,32px)!important;color:#f0d99a;margin:0!important}.game-room-heading h2:before{display:none!important}.game-room-heading p{margin:5px 0 0!important}.game-room-mark{display:grid;place-items:center;width:49px;height:49px;border-radius:18px;background:rgba(218,183,98,.16);border:1px solid rgba(235,204,131,.3);color:#f0d99a;font-size:25px}
+.upgrade-mode-grid{display:grid;grid-template-columns:1fr;gap:13px;margin:20px 0 4px!important}
+.upgrade-mode-grid .mode-card{min-height:112px!important;position:relative;display:grid!important;grid-template-columns:45px 1fr;grid-template-rows:auto auto auto;column-gap:13px!important;align-items:center!important;padding:18px!important;border-radius:23px!important;border:1px solid rgba(235,204,131,.3)!important;background:linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.035))!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)!important;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.upgrade-mode-grid .mode-card .mode-icon{grid-column:1;grid-row:1/4;display:grid;place-items:center;width:45px;height:45px;border-radius:16px;background:rgba(218,183,98,.15);font-size:23px!important}
+.upgrade-mode-grid .mode-card strong{grid-column:2;color:#f4dfaa!important;font-size:16px!important}.upgrade-mode-grid .mode-card small{grid-column:2;color:#c5cfdf!important;font-size:12px!important}.upgrade-mode-grid .mode-card .mode-open{grid-column:2;color:#f0d99a;font-size:11px;font-weight:750;margin-top:5px}
+.glass-back{border-radius:999px!important;background:rgba(255,255,255,.06)!important;border-color:rgba(255,255,255,.14)!important}
+@media(max-width:520px){main{padding:12px 10px 30px}.main-menu-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}.main-menu-actions button{min-height:112px!important;padding:14px!important}.community-actions{grid-template-columns:1fr!important}.main-menu-brand img{width:58px!important;height:58px!important}}
+@media(prefers-reduced-motion:reduce){button{transition:none!important;scroll-behavior:auto!important}}
+
 </style>
 </head>
 <body>
@@ -480,23 +516,14 @@ body[data-theme="emerald"] .sponsor-credit strong,body[data-theme="classic"] .sp
     <div class="daily-feature-text" id="menuDailyText">“Thy word is a lamp unto my feet, and a light unto my path.”</div>
     <div class="daily-feature-ref" id="menuDailyRef">Psalm 119:105 · KJV</div>
     <p class="muted" id="menuDailyReflection" style="margin:8px 0 12px">God’s Word gives light for the next faithful step.</p>
-    <button type="button" id="menuReadDaily">Read Bible Verse</button>
   </div>
   <div class="hidden" aria-hidden="true"><span id="menuTitle"></span><span id="menuDescription"></span><button id="menuRecords" type="button">Scores & Records</button><button id="langBtn" type="button">Language</button><button id="resetBtn" type="button">Reset</button><div class="menu-stats"><div><strong id="menuRounds">0</strong><span id="roundsLabel">Rounds played</span></div><div><strong id="menuPlayers">0</strong><span id="playersLabel">Players recorded</span></div></div></div>
   <div class="main-menu-actions">
-    <button id="menuStart" type="button"><span class="menu-action-icon">🎮</span><span><strong>Choose Game Mode</strong><small>Pick a challenge and start playing</small></span></button>
-    <button id="menuCalendar" type="button"><span class="menu-action-icon">📅</span><span><strong>My Calendar</strong><small>Private appointments, reminders, and notes</small></span></button>
-    <button id="menuSettings" type="button"><span class="menu-action-icon">⚙️</span><span><strong>Settings</strong><small>Change language and preferences</small></span></button>
-    <button id="menuQuit" type="button"><span class="menu-action-icon">↩</span><span><strong>Quit Game</strong><small>Leave Bible Challenge</small></span></button>
-  </div>
-  <div id="gameModeChooser" class="hidden">
-    <h2 style="margin:18px 0 10px;color:#f5c76d">Choose Game Mode</h2>
-    <div class="upgrade-mode-grid">
-      <button class="mode-card" id="menuSermonMode" type="button"><span class="mode-icon">📖</span><strong>Sermon VS Sermon</strong><small>Prepare and compare sermons</small></button>
-      <button class="mode-card coffee-card" id="openTrivia" type="button"><span class="mode-icon">☕</span><strong>Coffee and Trivia!</strong><small>Bible multiple-choice trivia · Easy to Expert</small></button>
-      <button class="mode-card" id="openVerseGame" type="button"><span class="mode-icon">✦</span><strong>Complete the Verse</strong><small>Fill in missing words · Solo or local multiplayer</small></button>
-    </div>
-    <button class="secondary" id="closeGameModeChooser" type="button" style="margin-top:10px">Back to Main Menu</button>
+    <button id="menuDailyBible" type="button"><span class="menu-action-icon">📖</span><span><strong>Daily Bible</strong><small>Read Scripture and reflection</small></span></button>
+    <button id="menuStart" type="button"><span class="menu-action-icon">✦</span><span><strong>Game Room</strong><small>Bible games and friendly challenges</small></span></button>
+    <button id="menuCalendar" type="button"><span class="menu-action-icon">▦</span><span><strong>My Calendar</strong><small>Church events, reminders, and notes</small></span></button>
+    <button id="menuSettings" type="button"><span class="menu-action-icon">⚙</span><span><strong>Settings</strong><small>Language, appearance, and sound</small></span></button>
+    <button id="menuQuit" type="button"><span class="menu-action-icon">↗</span><span><strong>Close Bible Challenge</strong><small>Close the app or return to your device</small></span></button>
   </div>
   <div class="menu-community">
     <div class="sponsor-credit">PROUDLY SPONSORED BY <strong>Ecos Del Reino</strong></div>
@@ -508,6 +535,18 @@ body[data-theme="emerald"] .sponsor-credit strong,body[data-theme="classic"] .sp
 
 </section>
 
+
+<div id="gameRoomScreen" class="screen hidden feature-screen">
+  <section class="panel game-room-panel">
+    <button class="secondary glass-back" type="button" data-return-home>← Home</button>
+    <div class="game-room-heading"><span class="game-room-mark">✦</span><div><h2>Game Room</h2><p class="muted">Choose a Bible challenge to play.</p></div></div>
+    <div class="upgrade-mode-grid">
+      <button class="mode-card" id="menuSermonMode" type="button"><span class="mode-icon">📖</span><strong>Sermon VS Sermon</strong><small>Prepare and compare sermons</small><span class="mode-open">Open challenge →</span></button>
+      <button class="mode-card coffee-card" id="openTrivia" type="button"><span class="mode-icon">☕</span><strong>Coffee and Trivia!</strong><small>Bible multiple-choice trivia · Easy to Expert</small><span class="mode-open">Open challenge →</span></button>
+      <button class="mode-card" id="openVerseGame" type="button"><span class="mode-icon">✦</span><strong>Complete the Verse</strong><small>Fill in missing words · Solo or local multiplayer</small><span class="mode-open">Open challenge →</span></button>
+    </div>
+  </section>
+</div>
 
 <div id="settingsScreen" class="screen hidden feature-screen">
   <section class="panel">
@@ -721,7 +760,7 @@ const words={
 };
 function tr(k){return words[lang][k]||words.en[k]||k}
 function renderWords(){
- $('title').textContent=tr('title');$('subtitle').textContent=tr('subtitle');$('menuTitle').textContent=tr('menuTitle');$('menuDescription').textContent=tr('menuDescription');const menuStartLabel=$('menuStart').querySelector('strong');if(menuStartLabel)menuStartLabel.textContent=lang==='es'?'Seleccionar modo de juego':'Choose Game Mode';$('roundsLabel').textContent=tr('roundsLabel');$('playersLabel').textContent=tr('playersLabel');$('resultsHeading').textContent=tr('resultsHeading');$('resultsDescription').textContent=tr('resultsDescription');$('saveScores').textContent=tr('saveScores');$('backToGame').textContent=tr('backToGame');$('scoreStatus').textContent=tr('scoreStatus');$('leaderboardHeading').textContent=tr('leaderboardHeading');$('historyHeading').textContent=tr('historyHeading');$('clearRecords').textContent=tr('clearRecords');$('setupTitle').textContent=tr('setupTitle');$('setupHelp').textContent=tr('setupHelp');$('nameLabel').textContent=tr('nameLabel');$('newName').placeholder=tr('placeholder');$('addPlayer').textContent=tr('add');$('photoNote').textContent=tr('photoNote');$('verseTitle').textContent=tr('verseTitle');$('verseHelp').textContent=tr('verseHelp');$('chooseVerse').textContent=tr('choose');$('showBoth').textContent=showSpanish?tr('bothHide'):tr('both');$('timerTitle').textContent=tr('timerTitle');$('timerHelp').textContent=tr('timerHelp');$('timerStatus').textContent=paused?tr('timerPaused'):(timerId?tr('timerRunning'):tr('ready'));$('startTimer').textContent=paused?tr('resume'):tr('start');$('pauseTimer').textContent=tr('pause');$('resetTimer').textContent=tr('resetTimer');$('reviewTitle').textContent=tr('reviewTitle');$('reviewHelp').textContent=tr('reviewHelp');$('doctrineLabel').textContent=tr('doctrine');$('applicationLabel').textContent=tr('application');$('judgeWithChatGPT').textContent=tr('judge');$('goToScores').textContent=lang==='es'?'Introducir puntuaciones / Ver récords':'Enter Scores / View Records';$('homeNav').textContent=lang==='es'?'Inicio':'Home';$('gameNav').textContent=lang==='es'?'Jugar':'Play Game';$('resultsNav').textContent=lang==='es'?'Puntuaciones':'Scores & Records';$('langBtn').textContent=lang==='en'?'Español':'English';$('resetBtn').textContent=tr('newRound');
+ $('title').textContent=tr('title');$('subtitle').textContent=tr('subtitle');$('menuTitle').textContent=tr('menuTitle');$('menuDescription').textContent=tr('menuDescription');const menuStartLabel=$('menuStart').querySelector('strong');if(menuStartLabel)menuStartLabel.textContent=lang==='es'?'Sala de juegos':'Game Room';$('roundsLabel').textContent=tr('roundsLabel');$('playersLabel').textContent=tr('playersLabel');$('resultsHeading').textContent=tr('resultsHeading');$('resultsDescription').textContent=tr('resultsDescription');$('saveScores').textContent=tr('saveScores');$('backToGame').textContent=tr('backToGame');$('scoreStatus').textContent=tr('scoreStatus');$('leaderboardHeading').textContent=tr('leaderboardHeading');$('historyHeading').textContent=tr('historyHeading');$('clearRecords').textContent=tr('clearRecords');$('setupTitle').textContent=tr('setupTitle');$('setupHelp').textContent=tr('setupHelp');$('nameLabel').textContent=tr('nameLabel');$('newName').placeholder=tr('placeholder');$('addPlayer').textContent=tr('add');$('photoNote').textContent=tr('photoNote');$('verseTitle').textContent=tr('verseTitle');$('verseHelp').textContent=tr('verseHelp');$('chooseVerse').textContent=tr('choose');$('showBoth').textContent=showSpanish?tr('bothHide'):tr('both');$('timerTitle').textContent=tr('timerTitle');$('timerHelp').textContent=tr('timerHelp');$('timerStatus').textContent=paused?tr('timerPaused'):(timerId?tr('timerRunning'):tr('ready'));$('startTimer').textContent=paused?tr('resume'):tr('start');$('pauseTimer').textContent=tr('pause');$('resetTimer').textContent=tr('resetTimer');$('reviewTitle').textContent=tr('reviewTitle');$('reviewHelp').textContent=tr('reviewHelp');$('doctrineLabel').textContent=tr('doctrine');$('applicationLabel').textContent=tr('application');$('judgeWithChatGPT').textContent=tr('judge');$('goToScores').textContent=lang==='es'?'Introducir puntuaciones / Ver récords':'Enter Scores / View Records';$('homeNav').textContent=lang==='es'?'Inicio':'Home';$('gameNav').textContent=lang==='es'?'Jugar':'Play Game';$('resultsNav').textContent=lang==='es'?'Puntuaciones':'Scores & Records';$('langBtn').textContent=lang==='en'?'Español':'English';$('resetBtn').textContent=tr('newRound');
 }
 function renderPlayers(){
  const root=$('players');root.innerHTML='';
@@ -833,12 +872,11 @@ document.querySelectorAll('[data-return-home]').forEach(b=>b.addEventListener('c
 $('openTrivia').addEventListener('click',()=>featureScreen('triviaScreen'));
 $('openVerseGame').addEventListener('click',()=>featureScreen('verseGameScreen'));
 $('menuSermonMode').addEventListener('click',()=>launchGameScreen('gameScreen'));
-$('closeGameModeChooser').addEventListener('click',()=>{$('gameModeChooser').classList.add('hidden');showScreen('homeScreen')});
-$('menuReadDaily').addEventListener('click',()=>{renderDailyVerse();launchGameScreen('dailyVerseScreen')});
+$('menuDailyBible').addEventListener('click',()=>{renderDailyVerse();launchGameScreen('dailyVerseScreen')});
 $('menuCalendar').addEventListener('click',()=>{renderCalendar();showScreen('calendarScreen')});
 $('menuSettings').addEventListener('click',()=>{ $('settingsLanguage').value=lang;$('settingsTheme').value=localStorage.getItem('bibleChallengeTheme')||'royal';$('soundEffectsToggle').checked=localStorage.getItem('bibleChallengeSoundEffects')!=='off';showScreen('settingsScreen') });
-$('menuQuit').addEventListener('click',()=>alert(lang==='es'?'Para salir, usa el gesto de inicio del iPhone o cierra la pestaña del navegador.':'To leave the game, use your iPhone Home gesture or close the browser tab.'));
-$('menuStart').addEventListener('click',()=>{$('gameModeChooser').classList.remove('hidden');$('gameModeChooser').scrollIntoView({behavior:'smooth',block:'center'})});
+$('menuQuit').addEventListener('click',()=>alert(lang==='es'?'Para cerrar Bible Challenge, cierra esta pestaña del navegador o usa el gesto de inicio de tu dispositivo.':'To close Bible Challenge, close this browser tab or use your device’s Home gesture.')); 
+$('menuStart').addEventListener('click',()=>showScreen('gameRoomScreen'));
 $('saveSettings').addEventListener('click',()=>{lang=$('settingsLanguage').value;localStorage.setItem('bibleChallengeLanguage',lang);const theme=$('settingsTheme').value;localStorage.setItem('bibleChallengeTheme',theme);document.body.dataset.theme=theme;localStorage.setItem('bibleChallengeSoundEffects',$('soundEffectsToggle').checked?'on':'off');renderWords();renderPlayers();renderDailyVerse();renderMenuDaily();$('settingsStatus').textContent=lang==='es'?'Preferencias guardadas.':'Settings saved.';});
 
 let triviaState={questions:[],index:0,players:[],scores:[],turn:0,answered:false};
