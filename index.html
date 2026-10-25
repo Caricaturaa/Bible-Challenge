@@ -1458,7 +1458,7 @@ auth$('changePasswordForm').addEventListener('submit',async e=>{
   const savedTheme=localStorage.getItem('bibleChallengeTheme')||'royal';document.body.dataset.theme=savedTheme;
   const gate=$('languageGate');
   document.querySelectorAll('[data-language-choice]').forEach(btn=>{btn.classList.toggle('selected',btn.dataset.languageChoice===lang);btn.addEventListener('click',()=>{lang=btn.dataset.languageChoice;document.querySelectorAll('[data-language-choice]').forEach(b=>b.classList.toggle('selected',b===btn));});});
-  $('languageContinue').addEventListener('click',()=>{localStorage.setItem('bibleChallengeLanguage',lang);gate.classList.add('hidden');renderWords();renderPlayers();renderDailyVerse();renderMenuDaily();showScreen('homeScreen');});
+  $('languageContinue').addEventListener('click',()=>{localStorage.setItem('bibleChallengeLanguage',lang);gate.classList.add('hidden');$('gameApp').classList.remove('hidden');$('authScreen').classList.add('hidden');renderWords();renderPlayers();renderDailyVerse();renderMenuDaily();showScreen('homeScreen');});
   window.addEventListener('bible-challenge-splash-hidden',()=>{gate.classList.remove('hidden');}, {once:true});
   $('settingsLanguage').value=lang;$('settingsTheme').value=savedTheme;$('soundEffectsToggle').checked=localStorage.getItem('bibleChallengeSoundEffects')!=='off';
 })();
