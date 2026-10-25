@@ -628,6 +628,28 @@ hr{border-color:rgba(174,207,240,.16)}
   .panel{padding:17px;border-radius:17px}
 }
 
+
+/* Reference-inspired app layout: keep the home dashboard focused and use dedicated screens. */
+#homeScreen #socialFeed{display:none!important}
+#homeScreen{padding-bottom:24px!important}
+.social-bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+.social-bottom-nav button{min-height:52px!important}
+.social-bottom-nav button.selected{color:#9bd8ff!important;background:rgba(116,190,242,.13)!important;border-color:rgba(155,216,255,.23)!important}
+.social-bottom-nav button.selected span{color:#bce7ff!important;filter:drop-shadow(0 0 8px rgba(116,190,242,.35))}
+#communityScreen .community-card,#postDetailScreen .community-card{background:linear-gradient(145deg,rgba(211,229,247,.13),rgba(87,132,176,.07));border:1px solid rgba(202,225,248,.24);border-radius:22px;box-shadow:0 12px 36px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.10)}
+#communityScreen .screen-heading h2,#postDetailScreen .screen-heading h2,#profileScreen .screen-heading h2{color:#f5f9ff}
+#calendarScreen .calendar-event{background:linear-gradient(145deg,rgba(211,229,247,.13),rgba(87,132,176,.07))!important;border:1px solid rgba(202,225,248,.24)!important;border-radius:18px!important}
+#settingsScreen .settings-grid{gap:15px}
+#settingsScreen .field{padding:13px;border:1px solid rgba(202,225,248,.16);border-radius:16px;background:rgba(174,203,232,.045)}
+#settingsScreen select{min-height:48px}
+#profileScreen .profile-stats div{background:linear-gradient(145deg,rgba(211,229,247,.13),rgba(87,132,176,.07));border-color:rgba(202,225,248,.22)}
+#gameRoomScreen .mode-card{min-height:120px}
+@media(max-width:520px){
+  #homeScreen{border-radius:24px!important}
+  #homeScreen .daily-feature{margin-top:12px!important}
+  .social-bottom-nav{width:calc(100% - 16px)!important;bottom:calc(8px + env(safe-area-inset-bottom,0px))!important}
+}
+
 </style>
 </head>
 <body>
@@ -781,9 +803,9 @@ hr{border-color:rgba(174,207,240,.16)}
   <nav class="social-bottom-nav" aria-label="App shortcuts">
     <button type="button" data-social-nav="homeScreen" class="selected"><span>⌂</span><small id="bottomHomeLabel">Home</small></button>
     <button type="button" data-social-nav="dailyVerseScreen"><span>▤</span><small id="bottomBibleLabel">Bible</small></button>
-    <button type="button" data-social-nav="gameRoomScreen"><span>✦</span><small id="bottomGamesLabel">Games</small></button>
-    <button type="button" data-social-nav="socialFeed"><span>♡</span><small id="bottomCommunityLabel">Community</small></button>
-    <button type="button" data-social-nav="settingsScreen"><span>⚙</span><small id="bottomProfileLabel">Profile</small></button>
+    <button type="button" data-social-nav="communityScreen"><span>♧</span><small>Community</small></button>
+    <button type="button" data-social-nav="calendarScreen"><span>▦</span><small>Calendar</small></button>
+    <button type="button" data-social-nav="profileScreen"><span>⋯</span><small>More</small></button>
   </nav>
   <div class="menu-community">
     <div class="sponsor-credit">PROUDLY SPONSORED BY <strong>Ecos Del Reino</strong></div>
@@ -1394,7 +1416,7 @@ document.querySelectorAll('[data-share]').forEach(button=>button.addEventListene
 }));
 document.querySelectorAll('[data-social-nav]').forEach(button=>button.addEventListener('click',()=>{
  const target=button.getAttribute('data-social-nav');
- if(target==='socialFeed'){document.getElementById('socialFeed')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
+ 
  showScreen(target);
  document.querySelectorAll('[data-social-nav]').forEach(b=>b.classList.toggle('selected',b===button));
 }));
