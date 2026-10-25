@@ -2089,7 +2089,7 @@ button:not(.social-bottom-nav button),.menu-link{border-radius:15px}
     const all=[...root.querySelectorAll('.community-card')];
     all.forEach((card,i)=>{
       const own=card.dataset.postOwner==='self';
-      card.hidden=(selectedCommunityFilter==='friends'&&!own)||(selectedCommunityFilter==='following'&&own);
+      card.hidden=(selectedCommunityFilter!=='all'&&own);
       card.querySelectorAll('.community-like').forEach(btn=>btn.onclick=()=>{const n=btn.querySelector('span');const active=btn.classList.toggle('is-active');if(n)n.textContent=String(Math.max(0,Number(n.textContent||0)+(active?1:-1)));});
       card.querySelectorAll('.community-comment').forEach(btn=>btn.onclick=()=>{const value=prompt('Write a comment');if(value&&value.trim()){btn.textContent='◯ '+(Number((btn.textContent.match(/\d+/)||['0'])[0])+1);btn.title=value.trim();}});
       card.querySelectorAll('.community-share').forEach(btn=>btn.onclick=()=>{const text=card.querySelector('p')?.textContent||'Bible Challenge community post';if(navigator.share)navigator.share({title:'Bible Challenge',text}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(text).then(()=>alert('Post text copied.')).catch(()=>alert(text));else alert(text);});
@@ -2112,7 +2112,7 @@ button:not(.social-bottom-nav button),.menu-link{border-radius:15px}
 
   // Calendar month grid; event creation remains integrated with the existing calendar editor.
   let calendarCursor=new Date();calendarCursor.setDate(1);let selectedDate=new Date().toISOString().slice(0,10);
-  function calendarItems(){return saved('bibleChallengeCalendarV1:'+(localStorage.getItem('bibleChallengeUsername')||'guest'),[])}
+  function calendarItems(){let all=[];try{for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key&&key.startsWith('bibleChallengeCalendarV1:')){const items=saved(key,[]);if(Array.isArray(items))all=all.concat(items)}}}catch(e){}const unique=new Map();all.forEach(item=>unique.set(item.id||[item.date,item.time,item.title].join('|'),item));return [...unique.values()]}
   function renderCalendarGrid(){
     const grid=$('calendarGridDays'),month=$('calendarGridMonth');if(!grid||!month)return;
     const year=calendarCursor.getFullYear(),m=calendarCursor.getMonth();
@@ -2136,6 +2136,8 @@ button:not(.social-bottom-nav button),.menu-link{border-radius:15px}
   $('calendarMonthPrev')?.addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderCalendarGrid()});
   $('calendarMonthNext')?.addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderCalendarGrid()});
   $('calendarAddNew')?.addEventListener('click',()=>{const input=$('calendarEventDate');if(input)input.value=selectedDate;});
+  $('calendarEventForm')?.addEventListener('submit',()=>setTimeout(()=>{renderCalendarGrid();},80));
+  $('cancelCalendarEdit')?.addEventListener('click',()=>setTimeout(renderCalendarGrid,30));
   renderCalendarGrid();
   const originalRenderCalendar=window.renderCalendar;
   if(typeof originalRenderCalendar==='function'){
@@ -2172,6 +2174,9 @@ button:not(.social-bottom-nav button),.menu-link{border-radius:15px}
   $('gameMyScoreButton')?.addEventListener('click',()=>{if(window.showScreen)window.showScreen('resultsScreen');else $('resultsScreen')?.classList.remove('hidden')});
   $('gameLeaderboardButton')?.addEventListener('click',()=>{if(window.showScreen)window.showScreen('resultsScreen');else $('resultsScreen')?.classList.remove('hidden');setTimeout(()=>$('leaderboardHeading')?.scrollIntoView({behavior:'smooth',block:'start'}),100)});
   $('gameHowToPlayButton')?.addEventListener('click',()=>alert('Choose a Bible challenge, add players, answer or complete the Scripture prompts, then save your results to see your records and leaderboard. Results are stored on this device.'));
+  $('backToCommunity')?.addEventListener('click',()=>{if(window.showScreen)window.showScreen('communityScreen');else{$('postDetailScreen')?.classList.add('hidden');$('communityScreen')?.classList.remove('hidden')}});
+  $('postDetailLike')?.addEventListener('click',e=>{const b=e.currentTarget;b.classList.toggle('is-active');b.firstChild.textContent=b.classList.contains('is-active')?'♥ ':'♡ '});
+  $('postDetailShare')?.addEventListener('click',()=>{const text=($('postDetailText')?.textContent||'Bible Challenge post');if(navigator.share)navigator.share({title:'Bible Challenge',text}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(text).then(()=>alert('Post text copied.')).catch(()=>alert(text));else alert(text)});
 
   // Keep visible labels and newly-rendered tabs in sync after Settings changes language.
   document.querySelectorAll('[data-social-nav="calendarScreen"]').forEach(b=>b.addEventListener('click',()=>setTimeout(renderCalendarGrid,30)));
