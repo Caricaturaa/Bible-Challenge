@@ -2271,5 +2271,22 @@ button:not(.social-bottom-nav button),.menu-link{border-radius:15px}
   window.bibleChallengeShowOnlineNotice=showOnlineNotice;
 })();
 </script>
+
+<style id="fixed-social-navigation">
+/* Keep the social-style bottom navigation attached to the viewport, not to a scrolling screen. */
+body{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important}
+.social-bottom-nav{position:fixed!important;left:50%!important;right:auto!important;top:auto!important;bottom:calc(8px + env(safe-area-inset-bottom,0px))!important;transform:translateX(-50%)!important;z-index:99998!important;width:min(680px,calc(100% - 20px))!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important}
+@media(max-width:520px){body{padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))!important}.social-bottom-nav{width:calc(100% - 16px)!important;bottom:calc(8px + env(safe-area-inset-bottom,0px))!important}}
+</style>
+<script id="pin-social-navigation-to-viewport">
+(function(){
+  const pinNavigation=()=>{
+    const nav=document.querySelector('.social-bottom-nav');
+    if(nav && nav.parentElement!==document.body) document.body.appendChild(nav);
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',pinNavigation,{once:true});
+  else pinNavigation();
+})();
+</script>
 </body>
 </html>
