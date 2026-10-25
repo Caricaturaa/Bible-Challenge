@@ -2183,5 +2183,55 @@ button:not(.social-bottom-nav button),.menu-link{border-radius:15px}
   document.querySelectorAll('[data-social-nav="calendarScreen"]').forEach(b=>b.addEventListener('click',()=>setTimeout(renderCalendarGrid,30)));
 })();
 </script>
+<style id="online-features-notice-style">
+.online-feature-notice{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(2,9,20,.78);backdrop-filter:blur(9px)}
+.online-feature-notice.hidden{display:none!important}
+.online-feature-notice-card{width:min(100%,390px);padding:25px 22px;border:1px solid rgba(158,211,250,.5);border-radius:24px;background:linear-gradient(145deg,#163653,#071729 78%);box-shadow:0 20px 70px rgba(0,0,0,.55),0 0 32px rgba(103,182,242,.13);color:#f0f7ff;text-align:center}
+.online-feature-notice-icon{width:58px;height:58px;display:grid;place-items:center;margin:0 auto 14px;border-radius:18px;border:1px solid rgba(165,219,255,.5);background:rgba(114,183,232,.16);font-size:27px}
+.online-feature-notice-card h2{font-size:21px;margin:0 0 10px;color:#f4f9ff}
+.online-feature-notice-card p{font-size:14px;line-height:1.6;color:#c8dced;margin:0 0 17px}
+.online-feature-notice-card .online-feature-note{font-size:12px;color:#8fb8d9;margin-bottom:20px}
+.online-feature-notice-card button{width:100%;border:1px solid rgba(198,230,255,.65);border-radius:14px;padding:12px 18px;background:linear-gradient(135deg,#d9efff,#80bce8);color:#08223a;font-weight:800}
+</style>
+<div id="onlineFeatureNotice" class="online-feature-notice hidden" role="dialog" aria-modal="true" aria-labelledby="onlineFeatureNoticeTitle">
+  <div class="online-feature-notice-card">
+    <div class="online-feature-notice-icon">☁</div>
+    <h2 id="onlineFeatureNoticeTitle">Online Feature Not Active Yet</h2>
+    <p id="onlineFeatureNoticeMessage">This feature needs an online service that is not connected yet.</p>
+    <p class="online-feature-note">Bible Challenge is still available for offline reading and supported local activities. Your action has not been posted or sent online.</p>
+    <button type="button" id="onlineFeatureNoticeClose">Got it</button>
+  </div>
+</div>
+<script id="online-features-not-active">
+(function(){
+  const modal=document.getElementById('onlineFeatureNotice');
+  const message=document.getElementById('onlineFeatureNoticeMessage');
+  const close=document.getElementById('onlineFeatureNoticeClose');
+  function showOnlineNotice(feature){
+    if(!modal||!message){alert(feature+' is not online active yet.');return}
+    message.textContent=feature+' is not online active yet. This feature needs an online service and shared accounts, which are not connected yet.';
+    modal.classList.remove('hidden');
+    if(close)close.focus();
+  }
+  function hideOnlineNotice(){modal?.classList.add('hidden')}
+  close?.addEventListener('click',hideOnlineNotice);
+  modal?.addEventListener('click',e=>{if(e.target===modal)hideOnlineNotice()});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')hideOnlineNotice()});
+  // Capture these actions before local-only handlers run, so the app never pretends an online action succeeded.
+  document.addEventListener('click',function(e){
+    const target=e.target.closest('button,label,input');
+    if(!target)return;
+    if(target.matches('#gameStartButton')){e.preventDefault();e.stopImmediatePropagation();showOnlineNotice('Multiplayer games');return}
+    if(target.matches('#gameJoinButton')){e.preventDefault();e.stopImmediatePropagation();showOnlineNotice('Joining a game');return}
+    if(target.matches('#gameLeaderboardButton')){e.preventDefault();e.stopImmediatePropagation();showOnlineNotice('Online leaderboard');return}
+    if(target.matches('#communityPostButton')){e.preventDefault();e.stopImmediatePropagation();showOnlineNotice('Community posts');return}
+    if(target.matches('[data-community-filter="friends"],[data-community-filter="following"]')){e.preventDefault();e.stopImmediatePropagation();showOnlineNotice(target.dataset.communityFilter==='friends'?'Friends feed':'Following feed');return}
+    if(target.matches('#communityImageInput,#communityImageInput + label,[for="communityImageInput"]')){e.preventDefault();e.stopImmediatePropagation();showOnlineNotice('Posting images');return}
+    if(target.closest('.community-card')&&target.matches('.community-like,.community-comment')){e.preventDefault();e.stopImmediatePropagation();showOnlineNotice(target.matches('.community-like')?'Community likes':'Community comments');return}
+    if(target.matches('#postDetailLike')){e.preventDefault();e.stopImmediatePropagation();showOnlineNotice('Post likes');return}
+  },true);
+  window.bibleChallengeShowOnlineNotice=showOnlineNotice;
+})();
+</script>
 </body>
 </html>
