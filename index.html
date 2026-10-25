@@ -831,6 +831,12 @@ hr{border-color:rgba(174,207,240,.16)}
 <section class="screen hidden feature-screen diamond-screen" id="communityScreen">
   <section class="panel diamond-panel">
     <div class="screen-heading"><div><p class="eyebrow">FAITH • FELLOWSHIP</p><h2>Community</h2><p class="muted">Encourage one another in faith.</p></div><span class="diamond-orb">✦</span></div>
+    <div class="reference-tabs" id="communityReferenceTabs" role="tablist" aria-label="Community filters">
+      <button type="button" class="is-active" data-community-filter="all" aria-selected="true">All Posts</button>
+      <button type="button" data-community-filter="friends" aria-selected="false">My Friends</button>
+      <button type="button" data-community-filter="following" aria-selected="false">Following</button>
+    </div>
+    <div class="compose-attachment-row"><label for="communityImageInput">＋ Add image</label><input id="communityImageInput" type="file" accept="image/*" hidden><span id="communityImageStatus" class="muted">Share encouragement with your community</span></div>
     <div class="compose-card"><div class="profile-dot">✦</div><input id="communityPostInput" type="text" maxlength="240" placeholder="Share an encouragement or verse…"><button id="communityPostButton" type="button">Post</button></div>
     <div id="communityDynamicPosts">
       <article class="community-card"><div class="community-author"><span class="profile-dot">M</span><div><strong>Maria G.</strong><small>Today · Daily reflection</small></div></div><p>“The Lord is my shepherd; I shall not want.” A reminder that we are never walking alone. 💙</p><div class="community-actions"><button type="button" class="community-like">♡ <span>24</span></button><button type="button" class="community-comment">◯ 5</button><button type="button" class="community-share">↗ Share</button></div></article>
@@ -859,6 +865,12 @@ hr{border-color:rgba(174,207,240,.16)}
     <div class="screen-heading"><div><p class="eyebrow">YOUR JOURNEY</p><h2>My Profile</h2></div><span class="diamond-orb">♧</span></div>
     <div class="profile-hero"><div class="profile-avatar-large">✦</div><h3 id="profileDisplayName">Child of God †</h3><p class="muted">Growing in faith, one day at a time.</p><button type="button" class="secondary" id="profileEditButton">Edit Profile</button></div>
     <div class="profile-stats"><div><strong id="profileReadingCount">0</strong><small>Verses read</small></div><div><strong id="profileChallengeCount">0</strong><small>Challenges</small></div><div><strong id="profileStreakCount">1</strong><small>Day streak</small></div></div>
+    <form id="profileEditForm" class="reference-profile-edit hidden">
+      <div class="field"><label for="profileNameInput">Display name</label><input id="profileNameInput" maxlength="50" placeholder="Your name"></div>
+      <div class="field"><label for="profileBioInput">About me</label><input id="profileBioInput" maxlength="140" placeholder="A short faith bio"></div>
+      <button type="submit">Save Profile</button><button type="button" class="secondary" id="profileCancelEdit">Cancel</button>
+      <p class="muted" id="profileEditStatus" role="status"></p>
+    </form>
     <div class="profile-link-list">
       <button type="button" id="profileGameRoom"><span>♜</span><span><strong>Game Room</strong><small>Play Bible challenges</small></span><b>›</b></button>
       <button type="button" id="profileSettings"><span>⚙</span><span><strong>Settings</strong><small>Language, appearance, sound</small></span><b>›</b></button>
@@ -875,6 +887,11 @@ hr{border-color:rgba(174,207,240,.16)}
       <button class="mode-card" id="menuSermonMode" type="button"><span class="mode-icon">📖</span><strong>Sermon VS Sermon</strong><small>Prepare and compare sermons</small><span class="mode-open">Open challenge →</span></button>
       <button class="mode-card coffee-card" id="openTrivia" type="button"><span class="mode-icon">☕</span><strong>Coffee and Trivia!</strong><small>Bible multiple-choice trivia · Easy to Expert</small><span class="mode-open">Open challenge →</span></button>
       <button class="mode-card" id="openVerseGame" type="button"><span class="mode-icon">✦</span><strong>Complete the Verse</strong><small>Fill in missing words · Solo or local multiplayer</small><span class="mode-open">Open challenge →</span></button>
+      <button class="mode-card reference-mode-card" id="gameStartButton" type="button"><span class="mode-icon">👥</span><strong>Start a Game</strong><small>Play a Bible challenge</small></button>
+      <button class="mode-card reference-mode-card" id="gameJoinButton" type="button"><span class="mode-icon">＋</span><strong>Join a Game</strong><small>Enter a local room code</small></button>
+      <button class="mode-card reference-mode-card" id="gameMyScoreButton" type="button"><span class="mode-icon">▥</span><strong>My Score</strong><small>View your progress</small></button>
+      <button class="mode-card reference-mode-card" id="gameLeaderboardButton" type="button"><span class="mode-icon">🏆</span><strong>Leaderboard</strong><small>See top players on this device</small></button>
+      <button class="mode-card reference-mode-card reference-mode-wide" id="gameHowToPlayButton" type="button"><span class="mode-icon">ⓘ</span><strong>How to Play</strong><small>Learn how the Bible games work</small></button>
     </div>
   </section>
 </div>
@@ -888,6 +905,10 @@ hr{border-color:rgba(174,207,240,.16)}
       <div class="field"><label for="settingsLanguage">Language / Idioma</label><select id="settingsLanguage"><option value="en">English</option><option value="es">Español</option></select></div>
       <div class="field"><label for="settingsTheme">App Appearance / Apariencia</label><select id="settingsTheme"><option value="royal">Diamond Blue — Navy & Silver</option><option value="emerald">Emerald — Green & Ivory</option><option value="classic">Classic — Espresso & Sand</option><option value="mono">Monochrome — Black & White</option></select></div>
       <label class="sound-setting"><input type="checkbox" id="soundEffectsToggle" checked> Sound Effects / Efectos de sonido</label>
+      <label class="sound-setting"><input type="checkbox" id="notificationsToggle"> Notifications / Notificaciones</label>
+      <button type="button" class="secondary" id="settingsHelpButton">Help &amp; Support</button>
+      <button type="button" class="secondary" id="settingsAboutButton">About Bible Challenge</button>
+      <div id="settingsInfoPanel" class="reference-info-panel hidden" aria-live="polite"></div>
       <button type="button" id="saveSettings">Save Settings</button>
     </div>
     <div class="status" id="settingsStatus" role="status">Your language preference is saved on this device.</div>
@@ -900,6 +921,16 @@ hr{border-color:rgba(174,207,240,.16)}
     <h2>📅 My Calendar</h2>
     <p class="muted">Your appointments, reminders, and notes are stored separately for this player on this device.</p>
     <div class="row" style="justify-content:space-between"><h3 class="calendar-month-title" id="calendarMonthTitle">Your Schedule</h3><button type="button" class="secondary" id="calendarAddNew">+ Add Event</button></div>
+    <div class="reference-calendar">
+      <div class="reference-calendar-controls"><button type="button" id="calendarMonthPrev" aria-label="Previous month">‹</button><strong id="calendarGridMonth"></strong><button type="button" id="calendarMonthNext" aria-label="Next month">›</button></div>
+      <div class="reference-calendar-weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+      <div class="reference-calendar-days" id="calendarGridDays"></div>
+    </div>
+    <div class="reference-calendar-stats">
+      <article><small>This Month</small><strong id="calendarMonthDaysCount">0</strong><span>Days with events</span></article>
+      <article><small>Streak</small><strong id="calendarStreakCount">0</strong><span>Days active</span></article>
+      <article><small>Total Events</small><strong id="calendarTotalEvents">0</strong><span>Saved reminders</span></article>
+    </div>
     <div id="calendarEventList"></div>
   </section>
   <section class="panel hidden" id="calendarEditorPanel">
@@ -1031,6 +1062,12 @@ hr{border-color:rgba(174,207,240,.16)}
 <div id="dailyVerseScreen" class="screen hidden feature-screen diamond-screen">
   <section class="panel diamond-panel daily-reading-panel">
     <div class="screen-heading"><div><p class="eyebrow" id="dailyEyebrow">PAUSE • READ • REFLECT</p><h2 class="feature-title" id="dailyPageTitle">Daily Bible</h2><p class="muted" id="dailyPageSubtitle">A moment in the Word.</p></div><span class="diamond-orb">EN</span></div>
+    <div class="reference-tabs" id="dailyReferenceTabs" role="tablist" aria-label="Daily Bible sections">
+      <button type="button" class="is-active" data-daily-tab="today" role="tab" aria-selected="true">Today</button>
+      <button type="button" data-daily-tab="plan" role="tab" aria-selected="false">Plan</button>
+      <button type="button" data-daily-tab="favorites" role="tab" aria-selected="false">Favorites</button>
+    </div>
+    <div id="dailyFavoritesPanel" class="reference-favorites-panel hidden"><h3>Favorite Verses</h3><div id="dailyFavoritesList"></div></div>
     <div class="daily-landscape-card">
       <div class="daily-landscape-top"><span id="dailyTodayTag">TODAY'S VERSE</span><button type="button" id="favoriteDailyVerse" aria-label="Save verse">♡</button></div>
       <div class="verse">
@@ -1966,5 +2003,179 @@ button:not(.social-bottom-nav button),.menu-link{border-radius:15px}
   .feature-screen>.panel,.screen>.panel{padding:26px!important}
 }
 </style>
+<style id="reference-functional-components">
+.reference-tabs{display:flex;gap:5px;padding:5px;margin:12px 0 16px;border-radius:999px;background:rgba(4,17,33,.72);border:1px solid rgba(164,211,250,.22)}
+.reference-tabs button{flex:1;min-height:36px;border:0;border-radius:999px;background:transparent;color:#c2d5e8;font-size:12px;padding:7px 10px}
+.reference-tabs button.is-active{background:linear-gradient(135deg,#d7efff,#83bce8);color:#09213a;box-shadow:0 0 14px rgba(114,191,247,.22)}
+.reference-favorites-panel,.reference-info-panel{padding:14px;border:1px solid rgba(164,211,250,.24);border-radius:16px;background:rgba(8,25,44,.8);margin:10px 0}
+.reference-favorite-item{padding:12px;margin:8px 0;border-radius:13px;background:rgba(89,140,183,.12);border:1px solid rgba(164,211,250,.18)}
+.reference-favorite-item p{margin:4px 0;color:#e9f5ff}
+.compose-attachment-row{display:flex;align-items:center;gap:10px;margin:8px 0 12px;font-size:12px}
+.compose-attachment-row label{cursor:pointer;padding:7px 11px;border-radius:11px;border:1px solid rgba(164,211,250,.3);background:rgba(121,183,228,.12);color:#d8efff}
+.reference-calendar{margin:14px 0;padding:14px;border:1px solid rgba(164,211,250,.25);border-radius:19px;background:linear-gradient(145deg,rgba(18,43,68,.96),rgba(5,20,37,.98))}
+.reference-calendar-controls{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.reference-calendar-controls button{width:36px;height:36px;border-radius:50%;font-size:22px;background:rgba(111,174,221,.14);border:1px solid rgba(164,211,250,.3);color:#e7f6ff}
+.reference-calendar-weekdays,.reference-calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;text-align:center}
+.reference-calendar-weekdays{font-size:11px;color:#b4c9de;margin-bottom:8px}
+.reference-calendar-days button{aspect-ratio:1/1;min-width:0;padding:0;border-radius:50%;background:transparent;border:1px solid transparent;color:#e8f2ff;font-size:12px;position:relative}
+.reference-calendar-days button.has-event:after{content:"";position:absolute;width:4px;height:4px;bottom:3px;left:calc(50% - 2px);border-radius:50%;background:#8bd0ff}
+.reference-calendar-days button.is-today{border-color:#a4dcff;box-shadow:0 0 10px rgba(112,194,249,.18)}
+.reference-calendar-days button.is-selected{background:linear-gradient(135deg,#d7efff,#72b1e5);color:#08213a;font-weight:800}
+.reference-calendar-days button.is-empty{pointer-events:none}
+.reference-calendar-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+.reference-calendar-stats article{display:flex;flex-direction:column;gap:5px;padding:12px;border:1px solid rgba(164,211,250,.22);border-radius:15px;background:rgba(13,33,54,.8)}
+.reference-calendar-stats small,.reference-calendar-stats span{font-size:10px;color:#b8cde1}
+.reference-calendar-stats strong{font-size:22px;color:#f1f8ff}
+.reference-mode-card{min-height:118px!important}
+.reference-mode-wide{grid-column:1/-1}
+.reference-profile-edit{display:grid;gap:10px;margin:14px 0;padding:14px;border:1px solid rgba(164,211,250,.24);border-radius:16px;background:rgba(8,25,44,.8)}
+@media(max-width:400px){.reference-calendar{padding:10px}.reference-calendar-weekdays,.reference-calendar-days{gap:2px}.reference-calendar-days button{font-size:11px}.reference-calendar-stats{gap:5px}.reference-calendar-stats article{padding:8px}}
+</style>
+<script id="reference-feature-implementation">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const safeParse=(value,fallback)=>{try{return JSON.parse(value)||fallback}catch(e){return fallback}};
+  const setHidden=(el,hidden)=>{if(el)el.classList.toggle('hidden',hidden)};
+  const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const saved=(key,fallback)=>safeParse(localStorage.getItem(key),fallback);
+  const write=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value))}catch(e){}};
+
+  // Daily Bible tabs and saved favorites.
+  const favoriteKey='bibleChallengeFavoriteVersesV1';
+  let dailyTab='today';
+  function dailyCurrent(){return {ref:$('dailyRef')?.textContent||'Daily Verse',en:$('dailyEn')?.textContent||'',es:$('dailyEs')?.textContent||'',date:new Date().toISOString().slice(0,10)}}
+  function renderFavorites(){
+    const list=$('dailyFavoritesList');if(!list)return;
+    const items=saved(favoriteKey,[]);
+    list.innerHTML=items.length?items.map((v,i)=>'<article class="reference-favorite-item"><strong>'+esc(v.ref)+'</strong><p>'+esc(v.en)+'</p><p lang="es">'+esc(v.es)+'</p><button type="button" data-remove-favorite="'+i+'" class="secondary">Remove</button></article>').join(''):'<p class="muted">No favorite verses saved yet. Tap the heart on a verse to save it.</p>';
+  }
+  function switchDailyTab(tab){
+    dailyTab=tab;
+    document.querySelectorAll('[data-daily-tab]').forEach(b=>{const active=b.dataset.dailyTab===tab;b.classList.toggle('is-active',active);b.setAttribute('aria-selected',String(active))});
+    setHidden(document.querySelector('.daily-landscape-card'),tab!=='today');
+    setHidden(document.querySelector('#dailyVerseScreen .reflection-card'),tab!=='today');
+    setHidden(document.querySelector('#dailyVerseScreen .reading-plan-card'),tab!=='plan');
+    setHidden($('dailyFavoritesPanel'),tab!=='favorites');
+    if(tab==='favorites')renderFavorites();
+  }
+  document.querySelectorAll('[data-daily-tab]').forEach(b=>b.addEventListener('click',()=>switchDailyTab(b.dataset.dailyTab)));
+  $('favoriteDailyVerse')?.addEventListener('click',()=>{
+    const v=dailyCurrent();if(!v.en)return;
+    let items=saved(favoriteKey,[]);const i=items.findIndex(x=>x.ref===v.ref&&x.en===v.en);
+    if(i>=0){items.splice(i,1);$('favoriteDailyVerse').textContent='♡';}
+    else{items.unshift(v);$('favoriteDailyVerse').textContent='♥';}
+    write(favoriteKey,items);if(dailyTab==='favorites')renderFavorites();
+    const status=$('dailyStatus');if(status)status.textContent=i>=0?'Removed from favorites.':'Verse saved to favorites.';
+  });
+  $('dailyFavoritesList')?.addEventListener('click',e=>{
+    const b=e.target.closest('[data-remove-favorite]');if(!b)return;
+    const items=saved(favoriteKey,[]);items.splice(Number(b.dataset.removeFavorite),1);write(favoriteKey,items);renderFavorites();
+  });
+
+  // Community filters, image attachments, post interactions and local post persistence.
+  const postKey='bibleChallengeCommunityPostsV1';
+  let selectedCommunityFilter='all', pendingImage='';
+  function renderCommunityPosts(){
+    const root=$('communityDynamicPosts');if(!root)return;
+    const builtIn=[...root.querySelectorAll('.community-card:not([data-user-post])')];
+    const localPosts=saved(postKey,[]);
+    root.querySelectorAll('[data-user-post]').forEach(n=>n.remove());
+    localPosts.forEach(post=>{
+      const article=document.createElement('article');article.className='community-card';article.dataset.userPost='true';article.dataset.postOwner='self';
+      article.innerHTML='<div class="community-author"><span class="profile-dot">'+esc((post.author||'Y').slice(0,1).toUpperCase())+'</span><div><strong>'+esc(post.author||'You')+'</strong><small>'+esc(post.meta||'Just now · Community')+'</small></div></div><p>'+esc(post.text)+'</p>'+(post.image?'<img class="community-post-image" alt="Attached community post" src="'+post.image+'">':'')+'<div class="community-actions"><button type="button" class="community-like">♡ <span>0</span></button><button type="button" class="community-comment">◯ 0</button><button type="button" class="community-share">↗ Share</button></div>';
+      root.prepend(article);
+    });
+    const all=[...root.querySelectorAll('.community-card')];
+    all.forEach((card,i)=>{
+      const own=card.dataset.postOwner==='self';
+      card.hidden=(selectedCommunityFilter==='friends'&&!own)||(selectedCommunityFilter==='following'&&own);
+      card.querySelectorAll('.community-like').forEach(btn=>btn.onclick=()=>{const n=btn.querySelector('span');const active=btn.classList.toggle('is-active');if(n)n.textContent=String(Math.max(0,Number(n.textContent||0)+(active?1:-1)));});
+      card.querySelectorAll('.community-comment').forEach(btn=>btn.onclick=()=>{const value=prompt('Write a comment');if(value&&value.trim()){btn.textContent='◯ '+(Number((btn.textContent.match(/\d+/)||['0'])[0])+1);btn.title=value.trim();}});
+      card.querySelectorAll('.community-share').forEach(btn=>btn.onclick=()=>{const text=card.querySelector('p')?.textContent||'Bible Challenge community post';if(navigator.share)navigator.share({title:'Bible Challenge',text}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(text).then(()=>alert('Post text copied.')).catch(()=>alert(text));else alert(text);});
+      card.onclick=e=>{if(e.target.closest('button'))return;const p=card.querySelector('p');if(p&&$('postDetailText')){$('postDetailText').textContent=p.textContent;$('postDetailAuthor').textContent=card.querySelector('.community-author strong')?.textContent||'Community';$('postDetailMeta').textContent=card.querySelector('.community-author small')?.textContent||'';if(window.showScreen)window.showScreen('postDetailScreen');}};
+    });
+  }
+  document.querySelectorAll('[data-community-filter]').forEach(b=>b.addEventListener('click',()=>{selectedCommunityFilter=b.dataset.communityFilter;document.querySelectorAll('[data-community-filter]').forEach(x=>{const active=x===b;x.classList.toggle('is-active',active);x.setAttribute('aria-selected',String(active))});renderCommunityPosts()}));
+  $('communityImageInput')?.addEventListener('change',e=>{
+    const file=e.target.files?.[0];if(!file)return;
+    if(file.size>1800000){$('communityImageStatus').textContent='Please choose an image under 1.8 MB.';e.target.value='';return}
+    const reader=new FileReader();reader.onload=()=>{pendingImage=String(reader.result||'');$('communityImageStatus').textContent='Image ready to attach.'};reader.readAsDataURL(file);
+  });
+  $('communityPostButton')?.addEventListener('click',()=>{
+    const input=$('communityPostInput');const text=input?.value.trim();if(!text&&!pendingImage){alert('Write a message or attach an image first.');return}
+    const items=saved(postKey,[]);items.unshift({text:text||'Shared an image',image:pendingImage,author:localStorage.getItem('bibleChallengeDisplayName')||'You',meta:'Just now · Community',createdAt:Date.now()});write(postKey,items);
+    if(input)input.value='';pendingImage='';if($('communityImageStatus'))$('communityImageStatus').textContent='Share encouragement with your community';if($('communityImageInput'))$('communityImageInput').value='';
+    selectedCommunityFilter='all';document.querySelectorAll('[data-community-filter]').forEach(b=>{const active=b.dataset.communityFilter==='all';b.classList.toggle('is-active',active);b.setAttribute('aria-selected',String(active))});renderCommunityPosts();
+  });
+  renderCommunityPosts();
+
+  // Calendar month grid; event creation remains integrated with the existing calendar editor.
+  let calendarCursor=new Date();calendarCursor.setDate(1);let selectedDate=new Date().toISOString().slice(0,10);
+  function calendarItems(){return saved('bibleChallengeCalendarV1:'+(localStorage.getItem('bibleChallengeUsername')||'guest'),[])}
+  function renderCalendarGrid(){
+    const grid=$('calendarGridDays'),month=$('calendarGridMonth');if(!grid||!month)return;
+    const year=calendarCursor.getFullYear(),m=calendarCursor.getMonth();
+    month.textContent=calendarCursor.toLocaleDateString(lang==='es'?'es-US':'en-US',{month:'long',year:'numeric'});
+    const first=new Date(year,m,1).getDay(),count=new Date(year,m+1,0).getDate(),items=calendarItems();
+    const eventDates=new Set(items.map(x=>x.date));grid.innerHTML='';
+    for(let i=0;i<first;i++){const blank=document.createElement('span');blank.className='is-empty';grid.appendChild(blank)}
+    const today=new Date().toISOString().slice(0,10);
+    for(let d=1;d<=count;d++){
+      const date=year+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+      const b=document.createElement('button');b.type='button';b.textContent=String(d);b.dataset.date=date;
+      if(date===today)b.classList.add('is-today');if(date===selectedDate)b.classList.add('is-selected');if(eventDates.has(date))b.classList.add('has-event');
+      b.setAttribute('aria-label',date+(eventDates.has(date)?' has events':''));b.onclick=()=>{selectedDate=date;renderCalendarGrid();const input=$('calendarEventDate');if(input)input.value=date;const list=$('calendarEventList');if(list){const matches=items.filter(x=>x.date===date);list.innerHTML=matches.length?matches.map(ev=>'<article class="calendar-event"><h3>'+esc(ev.title)+'</h3><p>'+esc(ev.date)+' · '+esc(ev.time||'')+'</p></article>').join(''):'<p class="muted">No events on '+esc(date)+'. Use Add Event to schedule one.</p>'}};
+      grid.appendChild(b);
+    }
+    const monthItems=items.filter(x=>String(x.date||'').startsWith(year+'-'+String(m+1).padStart(2,'0')));
+    $('calendarMonthDaysCount').textContent=new Set(monthItems.map(x=>x.date)).size;
+    $('calendarTotalEvents').textContent=items.length;
+    $('calendarStreakCount').textContent=new Set(items.map(x=>x.date)).size;
+  }
+  $('calendarMonthPrev')?.addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderCalendarGrid()});
+  $('calendarMonthNext')?.addEventListener('click',()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderCalendarGrid()});
+  $('calendarAddNew')?.addEventListener('click',()=>{const input=$('calendarEventDate');if(input)input.value=selectedDate;});
+  renderCalendarGrid();
+  const originalRenderCalendar=window.renderCalendar;
+  if(typeof originalRenderCalendar==='function'){
+    window.renderCalendar=function(){originalRenderCalendar();renderCalendarGrid()};
+  }
+
+  // Settings help/about, notification permission, and editable local profile.
+  $('settingsHelpButton')?.addEventListener('click',()=>{const p=$('settingsInfoPanel');if(!p)return; p.classList.remove('hidden');p.innerHTML='<h3>Help &amp; Support</h3><p>Use the bottom navigation to open Home, Bible, Community, Calendar, or More. Your local game records, favorite verses, posts, and calendar events are stored in this browser on this device.</p><p>For account sync or online multiplayer, a secure shared backend would be needed.</p>'});
+  $('settingsAboutButton')?.addEventListener('click',()=>{const p=$('settingsInfoPanel');if(!p)return;p.classList.remove('hidden');p.innerHTML='<h3>About Bible Challenge</h3><p>Bible Challenge helps you read Scripture, reflect, play Bible games, track your progress, and encourage others in faith.</p><p>English: King James Version (KJV). Spanish: Reina-Valera 1960 (RVR1960).</p>'});
+  $('notificationsToggle')?.addEventListener('change',async e=>{
+    if(!e.target.checked)return;
+    if(!('Notification' in window)){e.target.checked=false;if($('settingsStatus'))$('settingsStatus').textContent='Notifications are not supported in this browser.';return}
+    const result=await Notification.requestPermission();if(result!=='granted'){e.target.checked=false;if($('settingsStatus'))$('settingsStatus').textContent='Notification permission was not granted.'}else if($('settingsStatus'))$('settingsStatus').textContent='Notifications are enabled for this browser when supported.';
+  });
+  $('profileEditButton')?.addEventListener('click',()=>{
+    const form=$('profileEditForm');if(!form)return;setHidden(form,form.classList.contains('hidden')?false:true);
+    if($('profileNameInput'))$('profileNameInput').value=localStorage.getItem('bibleChallengeDisplayName')||'Child of God †';
+    if($('profileBioInput'))$('profileBioInput').value=localStorage.getItem('bibleChallengeProfileBio')||'Growing in faith, one day at a time.';
+  });
+  $('profileCancelEdit')?.addEventListener('click',()=>setHidden($('profileEditForm'),true));
+  $('profileEditForm')?.addEventListener('submit',e=>{
+    e.preventDefault();const name=$('profileNameInput')?.value.trim()||'Child of God †',bio=$('profileBioInput')?.value.trim()||'Growing in faith, one day at a time.';
+    localStorage.setItem('bibleChallengeDisplayName',name);localStorage.setItem('bibleChallengeProfileBio',bio);
+    if($('profileDisplayName'))$('profileDisplayName').textContent=name;
+    const bioNode=$('profileDisplayName')?.nextElementSibling;if(bioNode)bioNode.textContent=bio;
+    if($('profileEditStatus'))$('profileEditStatus').textContent='Profile saved on this device.';renderCommunityPosts();
+  });
+  const storedName=localStorage.getItem('bibleChallengeDisplayName');if(storedName&&$('profileDisplayName'))$('profileDisplayName').textContent=storedName;
+  const storedBio=localStorage.getItem('bibleChallengeProfileBio');if(storedBio&&$('profileDisplayName')?.nextElementSibling)$('profileDisplayName').nextElementSibling.textContent=storedBio;
+
+  // Reference Game Room shortcuts use the existing game screens and saved records.
+  $('gameStartButton')?.addEventListener('click',()=>{if(window.showScreen)window.showScreen('gameScreen');else $('gameScreen')?.classList.remove('hidden')});
+  $('gameJoinButton')?.addEventListener('click',()=>{const code=prompt('Enter a game room code. Note: online room joining requires a shared game server.');if(code&&code.trim())alert('Room codes need a shared multiplayer server before other players can join. You entered: '+code.trim())});
+  $('gameMyScoreButton')?.addEventListener('click',()=>{if(window.showScreen)window.showScreen('resultsScreen');else $('resultsScreen')?.classList.remove('hidden')});
+  $('gameLeaderboardButton')?.addEventListener('click',()=>{if(window.showScreen)window.showScreen('resultsScreen');else $('resultsScreen')?.classList.remove('hidden');setTimeout(()=>$('leaderboardHeading')?.scrollIntoView({behavior:'smooth',block:'start'}),100)});
+  $('gameHowToPlayButton')?.addEventListener('click',()=>alert('Choose a Bible challenge, add players, answer or complete the Scripture prompts, then save your results to see your records and leaderboard. Results are stored on this device.'));
+
+  // Keep visible labels and newly-rendered tabs in sync after Settings changes language.
+  document.querySelectorAll('[data-social-nav="calendarScreen"]').forEach(b=>b.addEventListener('click',()=>setTimeout(renderCalendarGrid,30)));
+})();
+</script>
 </body>
 </html>
