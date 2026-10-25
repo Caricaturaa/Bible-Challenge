@@ -2037,6 +2037,7 @@ button:not(.social-bottom-nav button),.menu-link{border-radius:15px}
   const $=id=>document.getElementById(id);
   const safeParse=(value,fallback)=>{try{return JSON.parse(value)||fallback}catch(e){return fallback}};
   const setHidden=(el,hidden)=>{if(el)el.classList.toggle('hidden',hidden)};
+  const navigate=id=>{document.querySelectorAll('.screen').forEach(el=>el.classList.toggle('hidden',el.id!==id));if($('homeScreen'))$('homeScreen').classList.toggle('hidden',id!=='homeScreen');document.querySelectorAll('[data-social-nav]').forEach(b=>b.classList.toggle('selected',b.dataset.socialNav===id));window.scrollTo({top:0,behavior:'smooth'});};
   const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const saved=(key,fallback)=>safeParse(localStorage.getItem(key),fallback);
   const write=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value))}catch(e){}};
@@ -2093,7 +2094,7 @@ button:not(.social-bottom-nav button),.menu-link{border-radius:15px}
       card.querySelectorAll('.community-like').forEach(btn=>btn.onclick=()=>{const n=btn.querySelector('span');const active=btn.classList.toggle('is-active');if(n)n.textContent=String(Math.max(0,Number(n.textContent||0)+(active?1:-1)));});
       card.querySelectorAll('.community-comment').forEach(btn=>btn.onclick=()=>{const value=prompt('Write a comment');if(value&&value.trim()){btn.textContent='◯ '+(Number((btn.textContent.match(/\d+/)||['0'])[0])+1);btn.title=value.trim();}});
       card.querySelectorAll('.community-share').forEach(btn=>btn.onclick=()=>{const text=card.querySelector('p')?.textContent||'Bible Challenge community post';if(navigator.share)navigator.share({title:'Bible Challenge',text}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(text).then(()=>alert('Post text copied.')).catch(()=>alert(text));else alert(text);});
-      card.onclick=e=>{if(e.target.closest('button'))return;const p=card.querySelector('p');if(p&&$('postDetailText')){$('postDetailText').textContent=p.textContent;$('postDetailAuthor').textContent=card.querySelector('.community-author strong')?.textContent||'Community';$('postDetailMeta').textContent=card.querySelector('.community-author small')?.textContent||'';if(window.showScreen)window.showScreen('postDetailScreen');}};
+      card.onclick=e=>{if(e.target.closest('button'))return;const p=card.querySelector('p');if(p&&$('postDetailText')){$('postDetailText').textContent=p.textContent;$('postDetailAuthor').textContent=card.querySelector('.community-author strong')?.textContent||'Community';$('postDetailMeta').textContent=card.querySelector('.community-author small')?.textContent||'';navigate('postDetailScreen');}};
     });
   }
   document.querySelectorAll('[data-community-filter]').forEach(b=>b.addEventListener('click',()=>{selectedCommunityFilter=b.dataset.communityFilter;document.querySelectorAll('[data-community-filter]').forEach(x=>{const active=x===b;x.classList.toggle('is-active',active);x.setAttribute('aria-selected',String(active))});renderCommunityPosts()}));
@@ -2169,12 +2170,12 @@ button:not(.social-bottom-nav button),.menu-link{border-radius:15px}
   const storedBio=localStorage.getItem('bibleChallengeProfileBio');if(storedBio&&$('profileDisplayName')?.nextElementSibling)$('profileDisplayName').nextElementSibling.textContent=storedBio;
 
   // Reference Game Room shortcuts use the existing game screens and saved records.
-  $('gameStartButton')?.addEventListener('click',()=>{if(window.showScreen)window.showScreen('gameScreen');else $('gameScreen')?.classList.remove('hidden')});
+  $('gameStartButton')?.addEventListener('click',()=>{navigate('gameScreen')});
   $('gameJoinButton')?.addEventListener('click',()=>{const code=prompt('Enter a game room code. Note: online room joining requires a shared game server.');if(code&&code.trim())alert('Room codes need a shared multiplayer server before other players can join. You entered: '+code.trim())});
-  $('gameMyScoreButton')?.addEventListener('click',()=>{if(window.showScreen)window.showScreen('resultsScreen');else $('resultsScreen')?.classList.remove('hidden')});
+  $('gameMyScoreButton')?.addEventListener('click',()=>{navigate('resultsScreen')});
   $('gameLeaderboardButton')?.addEventListener('click',()=>{if(window.showScreen)window.showScreen('resultsScreen');else $('resultsScreen')?.classList.remove('hidden');setTimeout(()=>$('leaderboardHeading')?.scrollIntoView({behavior:'smooth',block:'start'}),100)});
   $('gameHowToPlayButton')?.addEventListener('click',()=>alert('Choose a Bible challenge, add players, answer or complete the Scripture prompts, then save your results to see your records and leaderboard. Results are stored on this device.'));
-  $('backToCommunity')?.addEventListener('click',()=>{if(window.showScreen)window.showScreen('communityScreen');else{$('postDetailScreen')?.classList.add('hidden');$('communityScreen')?.classList.remove('hidden')}});
+  $('backToCommunity')?.addEventListener('click',()=>{navigate('communityScreen')});
   $('postDetailLike')?.addEventListener('click',e=>{const b=e.currentTarget;b.classList.toggle('is-active');b.firstChild.textContent=b.classList.contains('is-active')?'♥ ':'♡ '});
   $('postDetailShare')?.addEventListener('click',()=>{const text=($('postDetailText')?.textContent||'Bible Challenge post');if(navigator.share)navigator.share({title:'Bible Challenge',text}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(text).then(()=>alert('Post text copied.')).catch(()=>alert(text));else alert(text)});
 
