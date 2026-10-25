@@ -692,6 +692,36 @@ hr{border-color:rgba(174,207,240,.16)}
 #settingsScreen .status{font-size:11px;color:#9db6cf;margin-top:9px}
 @media(min-width:600px){#settingsScreen .reference-settings-panel{padding-top:22px}#settingsScreen .reference-setting-row{min-height:56px}}
 </style>
+<style id="reference-home-dashboard">
+/* Home dashboard refined to match the supplied phone reference. */
+#homeScreen{padding:18px 14px 26px;text-align:left;max-width:560px;margin-left:auto;margin-right:auto}
+#homeScreen .home-topbar{position:relative;display:block;text-align:center;margin:2px 0 18px;padding:0 48px 0}
+#homeScreen .home-welcome-copy{width:100%}
+#homeScreen .welcome-banner{font-size:13px!important;font-weight:500!important;letter-spacing:.01em!important;color:#eaf4ff!important;line-height:1.4!important}
+#homeScreen .home-tagline{font-size:11px;font-weight:500;letter-spacing:.02em;text-transform:none;margin:7px 0 0;color:#d2e3f6}
+#homeScreen .home-notification-button{position:absolute;right:0;top:0;width:36px;height:36px;min-height:36px;border-radius:50%!important;font-size:20px!important;background:linear-gradient(145deg,#b6dcff,#2f6294 55%,#10253d)!important;border:1px solid #b9dfff!important;box-shadow:0 0 14px #3e9cff35,inset 0 1px 4px #fff8!important}
+#homeScreen .home-notification-button .notification-dot{right:5px;top:4px}
+#homeScreen .main-menu-brand{display:block;text-align:center!important;margin:0 0 18px}
+#homeScreen .main-menu-brand img{display:none}
+#homeScreen .main-menu-brand h2{color:#f4f8ff;font-size:clamp(24px,6vw,30px);font-weight:800;letter-spacing:-.025em;text-shadow:0 0 16px #6dbdff55;margin:0}\n#homeScreen .main-menu-brand .home-tagline{font-size:11px;font-weight:500;letter-spacing:0;text-transform:none;margin:7px 0 0;color:#d2e3f6}
+#homeScreen .daily-feature{position:relative;margin:0 0 12px;padding:16px;border-radius:18px;border:1px solid #8dc9ff;background:linear-gradient(130deg,rgba(42,94,143,.96),rgba(101,157,205,.85) 55%,rgba(22,53,84,.97));box-shadow:inset 0 1px 0 #ffffff80,0 8px 24px #0003;overflow:hidden}
+#homeScreen .daily-feature h3{display:flex;align-items:center;gap:8px;color:#fff;font-size:15px;margin:0 0 9px;font-family:inherit}
+#homeScreen .daily-feature .home-verse-sun{font-size:19px}
+#homeScreen .daily-feature .home-verse-arrow{margin-left:auto;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;border:1px solid #d9efff;background:#173b61;color:white;font-size:28px;line-height:1}
+#homeScreen .daily-feature .daily-feature-text{font-size:20px;font-weight:700;line-height:1.25;margin:8px 0;color:#fff}
+#homeScreen .daily-feature .daily-feature-ref{color:#fff;font-size:12px;font-weight:700}
+#homeScreen .daily-feature #menuDailyReflection{color:#f2f8ff!important;font-size:13px;line-height:1.45}
+#homeScreen .main-menu-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 18px}
+#homeScreen .main-menu-actions button{min-width:0;min-height:108px;border-radius:16px!important;text-align:center;background:linear-gradient(145deg,rgba(127,170,207,.82),rgba(33,65,98,.96))!important;border:1px solid #8fcaff!important;box-shadow:inset 0 1px 0 #ffffff70,0 5px 14px #0003!important;padding:12px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+#homeScreen .main-menu-actions button .menu-action-icon{font-size:27px;min-width:0;color:#c4e6ff;text-shadow:0 0 12px #5db6ff}
+#homeScreen .main-menu-actions button strong{font-size:14px;color:#fff;line-height:1.2}
+#homeScreen .main-menu-actions button small{font-size:11px;color:#dceafa;line-height:1.3;margin-top:1px}
+#homeScreen .main-menu-actions button:after{display:none}
+#homeScreen .main-menu-actions #menuQuit{display:none}
+#homeScreen .social-feed{display:none!important}
+#homeScreen .menu-community{margin-top:16px}
+@media(max-width:520px){#homeScreen{padding:15px 12px 24px}#homeScreen .main-menu-actions{gap:9px}#homeScreen .main-menu-actions button{min-height:102px}}
+</style>
 </head>
 <body>
 <div id="gameSplash" role="status" aria-label="Opening Bible Challenge">
@@ -810,11 +840,10 @@ hr{border-color:rgba(174,207,240,.16)}
   <div class="home-topbar">
     <div class="home-welcome-copy">
       <div class="welcome-banner show" id="welcomeBanner" role="status">Welcome to</div>
-      <p class="home-tagline">Read <span>•</span> Grow <span>•</span> Challenge <span>•</span> Share</p>
     </div>
-    <button class="home-notification-button" id="homeNotificationButton" type="button" aria-label="Open notification settings" title="Notification settings">♧<span class="notification-dot" aria-hidden="true"></span></button>
+    <button class="home-notification-button" id="homeNotificationButton" type="button" aria-label="Open notification settings" title="Notification settings">🔔<span class="notification-dot" aria-hidden="true"></span></button>
   </div>
-  <div class="main-menu-brand"><img src="./icon-192.png" alt="Bible Challenge logo"><div><h2>BIBLE CHALLENGE</h2></div></div>
+  <div class="main-menu-brand"><img src="./icon-192.png" alt="Bible Challenge logo"><div><h2>Bible Challenge</h2><p class="home-tagline">Read <span>•</span> Grow <span>•</span> Challenge <span>•</span> Share</p></div></div>
   <div class="daily-feature">
     <h3><span class="home-verse-sun" aria-hidden="true">☀️</span> Verse of the Day <span class="home-verse-arrow" aria-hidden="true">›</span></h3>
     <div class="daily-feature-text" id="menuDailyText">“Thy word is a lamp unto my feet, and a light unto my path.”</div>
@@ -2343,32 +2372,3 @@ body{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important}
 </style>
 </body>
 </html>
-
-/* Home dashboard refined to match the supplied phone reference. */
-#homeScreen{padding:18px 14px 26px;text-align:left;max-width:560px;margin-left:auto;margin-right:auto}
-#homeScreen .home-topbar{position:relative;display:block;text-align:center;margin:2px 0 18px;padding:0 48px 0}
-#homeScreen .home-welcome-copy{width:100%}
-#homeScreen .welcome-banner{font-size:13px!important;font-weight:500!important;letter-spacing:.01em!important;color:#eaf4ff!important;line-height:1.4!important}
-#homeScreen .home-tagline{font-size:11px;font-weight:500;letter-spacing:.02em;text-transform:none;margin:7px 0 0;color:#d2e3f6}
-#homeScreen .home-notification-button{position:absolute;right:0;top:0;width:36px;height:36px;min-height:36px;border-radius:50%!important;font-size:20px!important;background:linear-gradient(145deg,#b6dcff,#2f6294 55%,#10253d)!important;border:1px solid #b9dfff!important;box-shadow:0 0 14px #3e9cff35,inset 0 1px 4px #fff8!important}
-#homeScreen .home-notification-button .notification-dot{right:5px;top:4px}
-#homeScreen .main-menu-brand{display:block;text-align:center!important;margin:0 0 18px}
-#homeScreen .main-menu-brand img{display:none}
-#homeScreen .main-menu-brand h2{color:#f4f8ff;font-size:clamp(24px,6vw,30px);font-weight:800;letter-spacing:-.025em;text-shadow:0 0 16px #6dbdff55}
-#homeScreen .daily-feature{position:relative;margin:0 0 12px;padding:16px;border-radius:18px;border:1px solid #8dc9ff;background:linear-gradient(130deg,rgba(42,94,143,.96),rgba(101,157,205,.85) 55%,rgba(22,53,84,.97));box-shadow:inset 0 1px 0 #ffffff80,0 8px 24px #0003;overflow:hidden}
-#homeScreen .daily-feature h3{display:flex;align-items:center;gap:8px;color:#fff;font-size:15px;margin:0 0 9px;font-family:inherit}
-#homeScreen .daily-feature .home-verse-sun{font-size:19px}
-#homeScreen .daily-feature .home-verse-arrow{margin-left:auto;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;border:1px solid #d9efff;background:#173b61;color:white;font-size:28px;line-height:1}
-#homeScreen .daily-feature .daily-feature-text{font:700 20px/1.25 inherit;margin:8px 0;color:#fff}
-#homeScreen .daily-feature .daily-feature-ref{color:#fff;font-size:12px;font-weight:700}
-#homeScreen .daily-feature #menuDailyReflection{color:#f2f8ff!important;font-size:13px;line-height:1.45}
-#homeScreen .main-menu-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 18px}
-#homeScreen .main-menu-actions button{min-width:0;min-height:108px;border-radius:16px!important;text-align:center;background:linear-gradient(145deg,rgba(127,170,207,.82),rgba(33,65,98,.96))!important;border:1px solid #8fcaff!important;box-shadow:inset 0 1px 0 #ffffff70,0 5px 14px #0003!important;padding:12px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
-#homeScreen .main-menu-actions button .menu-action-icon{font-size:27px;min-width:0;color:#c4e6ff;text-shadow:0 0 12px #5db6ff}
-#homeScreen .main-menu-actions button strong{font-size:14px;color:#fff;line-height:1.2}
-#homeScreen .main-menu-actions button small{font-size:11px;color:#dceafa;line-height:1.3;margin-top:1px}
-#homeScreen .main-menu-actions button:after{display:none}
-#homeScreen .main-menu-actions #menuQuit{display:none}
-#homeScreen .social-feed{display:none!important}
-#homeScreen .menu-community{margin-top:16px}
-@media(max-width:520px){#homeScreen{padding:15px 12px 24px}#homeScreen .main-menu-actions{gap:9px}#homeScreen .main-menu-actions button{min-height:102px}}
