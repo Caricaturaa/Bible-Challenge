@@ -1587,5 +1587,50 @@ auth$('changePasswordForm').addEventListener('submit',async e=>{
 })();
 </script>
 
+
+<script>
+// Language Continue fail-safe: keep this independent from the main app script.
+(function(){
+ function bindLanguageContinue(){
+  var button=document.getElementById('languageContinue');
+  if(!button || button.dataset.failSafeBound==='yes') return;
+  button.dataset.failSafeBound='yes';
+  button.addEventListener('click',function(){
+   try {
+    var selected=document.querySelector('[data-language-choice].selected') || document.querySelector('[data-language-choice]');
+    var language=(selected && selected.getAttribute('data-language-choice')) || localStorage.getItem('bibleChallengeLanguage') || 'en';
+    localStorage.setItem('bibleChallengeLanguage',language);
+    var gate=document.getElementById('languageGate');
+    if(gate) gate.classList.add('hidden');
+    var splash=document.getElementById('gameSplash');
+    if(splash) splash.classList.add('splash-hidden');
+    var app=document.getElementById('gameApp');
+    if(app) app.classList.remove('hidden');
+    var auth=document.getElementById('authScreen');
+    if(auth) auth.classList.add('hidden');
+    if(typeof renderWords==='function') renderWords();
+    if(typeof renderPlayers==='function') renderPlayers();
+    if(typeof renderDailyVerse==='function') renderDailyVerse();
+    if(typeof renderMenuDaily==='function') renderMenuDaily();
+    if(typeof showScreen==='function') showScreen('homeScreen');
+    else {
+      document.querySelectorAll('.screen').forEach(function(screen){screen.classList.toggle('hidden',screen.id!=='homeScreen');});
+      var home=document.getElementById('homeScreen');
+      if(home) home.classList.remove('hidden');
+    }
+   } catch(error) {
+    console.error('Bible Challenge startup:',error);
+    var gate=document.getElementById('languageGate'); if(gate) gate.classList.add('hidden');
+    var splash=document.getElementById('gameSplash'); if(splash) splash.classList.add('splash-hidden');
+    var app=document.getElementById('gameApp'); if(app) app.classList.remove('hidden');
+    var home=document.getElementById('homeScreen'); if(home) home.classList.remove('hidden');
+   }
+  },true);
+ }
+ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bindLanguageContinue,{once:true});
+ else bindLanguageContinue();
+})();
+</script>
+
 </body>
 </html>
