@@ -660,6 +660,30 @@ hr{border-color:rgba(174,207,240,.16)}
 #gameSplash .splash-progress-bar{background:linear-gradient(90deg,#397fb8,#bfe7ff,#76bfff);box-shadow:0 0 16px rgba(143,208,255,.65)}
 
 </style>
+<style> 
+/* Reference-matched Settings screen: compact, stacked glass rows in Diamond Blue */
+#settingsScreen .reference-settings-panel{max-width:520px;margin:0 auto;padding:18px 14px 22px;background:transparent!important;box-shadow:none!important;border:0!important}
+#settingsScreen .settings-back{display:block!important;width:38px;height:34px;min-height:34px;padding:0 0 4px!important;border:0!important;background:transparent!important;color:#e8f5ff!important;font-size:32px!important;line-height:1}
+#settingsScreen .reference-settings-panel h2{text-align:center;font-size:21px;margin:-31px 0 18px;color:#f4f8ff!important}
+#settingsScreen .reference-settings-list{gap:3px!important;border-radius:15px;overflow:hidden;border:1px solid rgba(143,193,237,.17);background:rgba(7,22,39,.54)}
+#settingsScreen .reference-setting-row{box-sizing:border-box;width:100%;min-height:50px;margin:0;padding:0 13px;display:flex;align-items:center;gap:11px;text-align:left;color:#f5f8ff;background:linear-gradient(105deg,rgba(27,52,77,.82),rgba(9,25,43,.94));border:0;border-bottom:1px solid rgba(143,193,237,.18);border-radius:0;font:inherit}
+#settingsScreen .reference-setting-row:last-of-type{border-bottom:0}
+#settingsScreen button.reference-setting-row{cursor:pointer}
+#settingsScreen .setting-icon{width:18px;min-width:18px;text-align:center;color:#d9edff;font-size:17px}
+#settingsScreen .setting-row-title,#settingsScreen .reference-setting-row label{font-size:12px;font-weight:500;flex:1;color:#f5f8ff;margin:0}
+#settingsScreen .reference-setting-row select{width:auto;max-width:100px;min-height:30px;padding:3px 2px;background:transparent!important;border:0!important;color:#d7e5f5!important;font-size:11px;text-align:right}
+#settingsScreen .reference-setting-row select option{background:#10243a;color:white}
+#settingsScreen .setting-row-value{margin-left:auto;color:#c5d7eb;font-size:11px}
+#settingsScreen .setting-chevron{color:#9db9d7;font-size:20px;line-height:1;margin-left:1px}
+#settingsScreen .reference-switch{appearance:none;width:35px;height:21px;min-width:35px;border-radius:99px;border:1px solid #6684a5;background:#344b64;position:relative;margin:0 0 0 auto;cursor:pointer}
+#settingsScreen .reference-switch:before{content:"";position:absolute;width:15px;height:15px;left:2px;top:2px;border-radius:50%;background:#f0f5fb;transition:transform .18s ease}
+#settingsScreen .reference-switch:checked{background:linear-gradient(135deg,#72c6ff,#3689d9);border-color:#8bd0ff;box-shadow:0 0 9px #4ea9f555}
+#settingsScreen .reference-switch:checked:before{transform:translateX(14px)}
+#settingsScreen .settings-hidden-control,#settingsScreen .settings-save-hidden{display:none!important}
+#settingsScreen .reference-info-panel{margin-top:10px;padding:13px;border:1px solid rgba(143,193,237,.2);border-radius:12px;background:rgba(12,30,49,.94);color:#e8f2ff;font-size:13px}
+#settingsScreen .status{font-size:11px;color:#9db6cf;margin-top:9px}
+@media(min-width:600px){#settingsScreen .reference-settings-panel{padding-top:22px}#settingsScreen .reference-setting-row{min-height:56px}}
+</style>
 </head>
 <body>
 <div id="gameSplash" role="status" aria-label="Opening Bible Challenge">
@@ -897,21 +921,33 @@ hr{border-color:rgba(174,207,240,.16)}
 </div>
 
 <div id="settingsScreen" class="screen hidden feature-screen">
-  <section class="panel">
-    <button class="secondary" type="button" data-return-home>← Main Menu</button>
-    <h2>⚙️ Settings</h2>
-    <p class="muted">Change your app preferences. Your game records and calendar entries will stay saved.</p>
-    <div class="settings-grid">
-      <div class="field"><label for="settingsLanguage">Language / Idioma</label><select id="settingsLanguage"><option value="en">English</option><option value="es">Español</option></select></div>
-      <div class="field"><label for="settingsTheme">App Appearance / Apariencia</label><select id="settingsTheme"><option value="royal">Diamond Blue — Navy & Silver</option><option value="emerald">Emerald — Green & Ivory</option><option value="classic">Classic — Espresso & Sand</option><option value="mono">Monochrome — Black & White</option></select></div>
-      <label class="sound-setting"><input type="checkbox" id="soundEffectsToggle" checked> Sound Effects / Efectos de sonido</label>
-      <label class="sound-setting"><input type="checkbox" id="notificationsToggle"> Notifications / Notificaciones</label>
-      <button type="button" class="secondary" id="settingsHelpButton">Help &amp; Support</button>
-      <button type="button" class="secondary" id="settingsAboutButton">About Bible Challenge</button>
+  <section class="panel reference-settings-panel">
+    <button class="secondary settings-back" type="button" data-return-home aria-label="Back">‹</button>
+    <h2>Settings</h2>
+    <div class="settings-grid reference-settings-list">
+      <div class="reference-setting-row">
+        <span class="setting-icon">✥</span><label for="settingsLanguage">Language</label>
+        <select id="settingsLanguage" aria-label="Language"><option value="en">English</option><option value="es">Español</option></select><span class="setting-chevron">›</span>
+      </div>
+      <label class="reference-setting-row" for="notificationsToggle">
+        <span class="setting-icon">♟</span><span class="setting-row-title">Notifications</span>
+        <input type="checkbox" id="notificationsToggle" class="reference-switch" aria-label="Notifications">
+      </label>
+      <button class="reference-setting-row" type="button" id="settingsAppearanceButton">
+        <span class="setting-icon">♢</span><span class="setting-row-title">Appearance</span><span class="setting-row-value">Diamond Blue</span><span class="setting-chevron">›</span>
+      </button>
+      <button type="button" class="reference-setting-row" id="settingsHelpButton">
+        <span class="setting-icon">❔</span><span class="setting-row-title">Help &amp; Support</span><span class="setting-chevron">›</span>
+      </button>
+      <button type="button" class="reference-setting-row" id="settingsAboutButton">
+        <span class="setting-icon">❔</span><span class="setting-row-title">About Bible Challenge</span><span class="setting-chevron">›</span>
+      </button>
+      <select id="settingsTheme" class="settings-hidden-control" aria-label="Appearance"><option value="royal">Diamond Blue</option><option value="emerald">Emerald</option><option value="classic">Classic</option><option value="mono">Monochrome</option></select>
+      <input type="checkbox" id="soundEffectsToggle" checked class="settings-hidden-control" aria-label="Sound effects">
       <div id="settingsInfoPanel" class="reference-info-panel hidden" aria-live="polite"></div>
-      <button type="button" id="saveSettings">Save Settings</button>
+      <button type="button" id="saveSettings" class="settings-save-hidden">Save Settings</button>
     </div>
-    <div class="status" id="settingsStatus" role="status">Your language preference is saved on this device.</div>
+    <div class="status" id="settingsStatus" role="status" aria-live="polite"></div>
   </section>
 </div>
 
@@ -1326,6 +1362,7 @@ $('menuSettings').addEventListener('click',()=>{ $('settingsLanguage').value=lan
 $('menuQuit').addEventListener('click',()=>alert(lang==='es'?'Para cerrar Bible Challenge, cierra esta pestaña del navegador o usa el gesto de inicio de tu dispositivo.':'To close Bible Challenge, close this browser tab or use your device’s Home gesture.')); 
 $('menuStart').addEventListener('click',()=>showScreen('gameRoomScreen'));
 $('saveSettings').addEventListener('click',()=>{lang=$('settingsLanguage').value;localStorage.setItem('bibleChallengeLanguage',lang);const theme=$('settingsTheme').value;localStorage.setItem('bibleChallengeTheme',theme);document.body.dataset.theme=theme;localStorage.setItem('bibleChallengeSoundEffects',$('soundEffectsToggle').checked?'on':'off');renderWords();renderPlayers();renderDailyVerse();renderMenuDaily();$('settingsStatus').textContent=lang==='es'?'Preferencias guardadas.':'Settings saved.';});
+$('settingsLanguage')?.addEventListener('change',()=>{lang=$('settingsLanguage').value;localStorage.setItem('bibleChallengeLanguage',lang);renderWords();renderPlayers();renderDailyVerse();renderMenuDaily();if(typeof applyLanguage==='function')applyLanguage();});
 
 let triviaState={questions:[],index:0,players:[],scores:[],turn:0,answered:false};
 function startTrivia(){
@@ -2147,6 +2184,7 @@ button:not(.social-bottom-nav button),.menu-link{border-radius:15px}
 
   // Settings help/about, notification permission, and editable local profile.
   $('settingsHelpButton')?.addEventListener('click',()=>{const p=$('settingsInfoPanel');if(!p)return; p.classList.remove('hidden');p.innerHTML='<h3>Help &amp; Support</h3><p>Use the bottom navigation to open Home, Bible, Community, Calendar, or More. Your local game records, favorite verses, posts, and calendar events are stored in this browser on this device.</p><p>For account sync or online multiplayer, a secure shared backend would be needed.</p>'});
+  $('settingsAppearanceButton')?.addEventListener('click',()=>{const p=$('settingsInfoPanel');if(!p)return;p.classList.remove('hidden');p.innerHTML='<strong>Appearance</strong><p>Diamond Blue is the current app appearance.</p>';});
   $('settingsAboutButton')?.addEventListener('click',()=>{const p=$('settingsInfoPanel');if(!p)return;p.classList.remove('hidden');p.innerHTML='<h3>About Bible Challenge</h3><p>Bible Challenge helps you read Scripture, reflect, play Bible games, track your progress, and encourage others in faith.</p><p>English: King James Version (KJV). Spanish: Reina-Valera 1960 (RVR1960).</p>'});
   $('notificationsToggle')?.addEventListener('change',async e=>{
     if(!e.target.checked)return;
