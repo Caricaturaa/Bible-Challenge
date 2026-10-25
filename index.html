@@ -722,6 +722,20 @@ hr{border-color:rgba(174,207,240,.16)}
 #homeScreen .menu-community{margin-top:16px}
 @media(max-width:520px){#homeScreen{padding:15px 12px 24px}#homeScreen .main-menu-actions{gap:9px}#homeScreen .main-menu-actions button{min-height:102px}}
 </style>
+<style id="home-account-and-brand-layout">
+#homeScreen .home-topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px;padding:0}
+#homeScreen .home-account-tab{display:flex;align-items:center;gap:8px;min-width:0;max-width:calc(100% - 48px);min-height:38px;padding:6px 12px!important;border-radius:22px!important;background:linear-gradient(145deg,rgba(157,199,235,.3),rgba(29,64,101,.88))!important;border:1px solid rgba(154,208,255,.75)!important;color:#f3f8ff!important;font-size:13px!important;font-weight:700!important;box-shadow:inset 0 1px 0 #ffffff35,0 0 12px #459ce522!important}
+#homeScreen .home-account-avatar{display:grid;place-items:center;width:23px;height:23px;flex:0 0 23px;border-radius:50%;background:linear-gradient(145deg,#d8edff,#5c9fd8);color:#153552;font-size:13px}
+#homeScreen #homeAccountName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#homeScreen .home-account-chevron{font-size:20px;line-height:1;color:#d5ebff}
+#homeScreen .home-notification-button{flex:0 0 36px}
+#homeScreen .main-menu-brand{display:block!important;text-align:center!important;margin:0 0 18px!important}
+#homeScreen .home-welcome-label{margin:0 0 4px;color:#eaf4ff;font-size:13px;font-weight:500;letter-spacing:.01em}
+#homeScreen .home-brand-line{display:flex;align-items:center;justify-content:center;gap:10px}
+#homeScreen .home-brand-line img{display:block!important;width:54px!important;height:54px!important;object-fit:contain;flex:0 0 54px;margin:0!important;filter:drop-shadow(0 0 14px #6dbdff70)}
+#homeScreen .home-brand-line h2{margin:0;color:#f4f8ff;font-size:clamp(24px,6vw,30px);font-weight:800;letter-spacing:-.025em;text-shadow:0 0 16px #6dbdff55;white-space:nowrap}
+#homeScreen .main-menu-brand .home-tagline{font-size:11px;font-weight:500;letter-spacing:0;text-transform:none;margin:6px 0 0;color:#d2e3f6}
+</style>
 </head>
 <body>
 <div id="gameSplash" role="status" aria-label="Opening Bible Challenge">
@@ -838,12 +852,12 @@ hr{border-color:rgba(174,207,240,.16)}
 
 <section class="panel menu-panel" id="homeScreen">
   <div class="home-topbar">
-    <div class="home-welcome-copy">
-      <div class="welcome-banner show" id="welcomeBanner" role="status">Welcome to</div>
-    </div>
+    <button class="home-account-tab" id="homeAccountTab" type="button" aria-label="Open your profile">
+      <span class="home-account-avatar" aria-hidden="true">✦</span><span id="homeAccountName">Child of God †</span><span class="home-account-chevron" aria-hidden="true">›</span>
+    </button>
     <button class="home-notification-button" id="homeNotificationButton" type="button" aria-label="Open notification settings" title="Notification settings">🔔<span class="notification-dot" aria-hidden="true"></span></button>
   </div>
-  <div class="main-menu-brand"><img src="./icon-192.png" alt="Bible Challenge logo"><div><h2>Bible Challenge</h2><p class="home-tagline">Read <span>•</span> Grow <span>•</span> Challenge <span>•</span> Share</p></div></div>
+  <div class="main-menu-brand"><p class="home-welcome-label">Welcome to</p><div class="home-brand-line"><img src="./icon-192.png" alt="Bible Challenge logo"><h2>Bible Challenge</h2></div><p class="home-tagline">Read <span>•</span> Grow <span>•</span> Challenge <span>•</span> Share</p></div>
   <div class="daily-feature">
     <h3><span class="home-verse-sun" aria-hidden="true">☀️</span> Verse of the Day <span class="home-verse-arrow" aria-hidden="true">›</span></h3>
     <div class="daily-feature-text" id="menuDailyText">“Thy word is a lamp unto my feet, and a light unto my path.”</div>
@@ -2247,10 +2261,14 @@ button:not(.social-bottom-nav button),.menu-link{border-radius:15px}
     e.preventDefault();const name=$('profileNameInput')?.value.trim()||'Child of God †',bio=$('profileBioInput')?.value.trim()||'Growing in faith, one day at a time.';
     localStorage.setItem('bibleChallengeDisplayName',name);localStorage.setItem('bibleChallengeProfileBio',bio);
     if($('profileDisplayName'))$('profileDisplayName').textContent=name;
+    if($('homeAccountName'))$('homeAccountName').textContent=name;
     const bioNode=$('profileDisplayName')?.nextElementSibling;if(bioNode)bioNode.textContent=bio;
     if($('profileEditStatus'))$('profileEditStatus').textContent='Profile saved on this device.';renderCommunityPosts();
   });
   const storedName=localStorage.getItem('bibleChallengeDisplayName');if(storedName&&$('profileDisplayName'))$('profileDisplayName').textContent=storedName;
+  const homeAccountName=$('homeAccountName');
+  if(homeAccountName)homeAccountName.textContent=storedName||'Child of God †';
+  $('homeAccountTab')?.addEventListener('click',()=>navigate('profileScreen'));
   const storedBio=localStorage.getItem('bibleChallengeProfileBio');if(storedBio&&$('profileDisplayName')?.nextElementSibling)$('profileDisplayName').nextElementSibling.textContent=storedBio;
 
   // Reference Game Room shortcuts use the existing game screens and saved records.
