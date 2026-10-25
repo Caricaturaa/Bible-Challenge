@@ -1794,5 +1794,27 @@ body{background-color:#050b18!important;background-image:radial-gradient(ellipse
 @media(max-width:600px){#homeScreen.panel{padding:14px!important;border-radius:23px!important}#homeScreen .main-menu-brand img{width:52px!important;height:52px!important}#homeScreen .main-menu-actions>button{min-height:76px!important}}
 </style>
 
+
+<style id="language-only-in-settings">
+/* Language selection is managed from Settings only; never show the startup language gate. */
+#languageGate{display:none!important;visibility:hidden!important;pointer-events:none!important}
+</style>
+<script id="language-settings-only">
+(function(){
+  function keepLanguageGateClosed(){
+    var gate=document.getElementById('languageGate');
+    if(gate){gate.classList.add('hidden');gate.setAttribute('aria-hidden','true');}
+    var app=document.getElementById('gameApp');
+    if(app)app.classList.remove('hidden');
+    var auth=document.getElementById('authScreen');
+    if(auth)auth.classList.add('hidden');
+  }
+  keepLanguageGateClosed();
+  document.addEventListener('DOMContentLoaded',keepLanguageGateClosed);
+  window.addEventListener('bible-challenge-splash-hidden',keepLanguageGateClosed);
+  window.addEventListener('pageshow',keepLanguageGateClosed);
+})();
+</script>
+
 </body>
 </html>
