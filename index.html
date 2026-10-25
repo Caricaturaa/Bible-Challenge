@@ -650,6 +650,15 @@ hr{border-color:rgba(174,207,240,.16)}
   .social-bottom-nav{width:calc(100% - 16px)!important;bottom:calc(8px + env(safe-area-inset-bottom,0px))!important}
 }
 
+
+/* Match the existing loading artwork to the Diamond Blue app palette without replacing the image. */
+#gameSplash{background-color:#050b18!important}
+#gameSplash:after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(3,10,23,.10),rgba(5,15,31,.12) 55%,rgba(4,12,25,.48));}
+#gameSplash .splash-art{z-index:0;filter:saturate(.92) hue-rotate(5deg) brightness(.94)}
+#gameSplash .splash-progress-wrap{z-index:2;color:#bfe7ff;text-shadow:0 2px 12px rgba(0,0,0,.85)}
+#gameSplash .splash-progress-track{background:rgba(216,238,255,.16);border-color:rgba(175,220,255,.62);box-shadow:0 0 22px rgba(100,184,245,.16)}
+#gameSplash .splash-progress-bar{background:linear-gradient(90deg,#397fb8,#bfe7ff,#76bfff);box-shadow:0 0 16px rgba(143,208,255,.65)}
+
 </style>
 </head>
 <body>
