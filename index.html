@@ -2288,5 +2288,21 @@ body{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important}
   else pinNavigation();
 })();
 </script>
+
+<style id="mobile-scroll-clearance-fix">
+/* Mobile: keep the pinned tab bar visually solid and leave a clean ending below scrollable content. */
+@media(max-width:600px){
+  main{padding-bottom:calc(150px + env(safe-area-inset-bottom,0px))!important}
+  .screen:not(.hidden),.feature-screen:not(.hidden){scroll-margin-bottom:calc(115px + env(safe-area-inset-bottom,0px))}
+  .social-bottom-nav{
+    background:rgba(3,11,23,.995)!important;
+    -webkit-backdrop-filter:blur(24px) saturate(115%)!important;
+    backdrop-filter:blur(24px) saturate(115%)!important;
+    box-shadow:0 -8px 24px rgba(0,0,0,.3),0 12px 35px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.09)!important;
+    border-color:rgba(139,205,255,.48)!important;
+  }
+  body{padding-bottom:calc(105px + env(safe-area-inset-bottom,0px))!important}
+}
+</style>
 </body>
 </html>
