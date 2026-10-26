@@ -975,6 +975,28 @@ hr{border-color:rgba(174,207,240,.16)}
       <button class="mode-card reference-mode-card reference-mode-wide" id="gameHowToPlayButton" type="button"><span class="mode-icon">ⓘ</span><strong>How to Play</strong><small>Learn how the Bible games work</small></button>
     </div>
   </section>
+
+  <section class="panel diamond-panel" id="phoneMultiplayerPanel" style="margin-top:16px">
+    <h3>Play with another phone</h3>
+    <p class="muted">Both players need internet. One player creates a room and shares the room code with the other player.</p>
+    <div class="feature-controls">
+      <div class="field"><label for="phoneMultiDifficulty">Trivia difficulty</label><select id="phoneMultiDifficulty"><option>Easy</option><option>Medium</option><option>Hard</option><option>Expert</option></select></div>
+      <div class="field"><label for="phoneMultiRoomCode">Room code to join</label><input id="phoneMultiRoomCode" type="text" autocapitalize="none" autocomplete="off" placeholder="Enter host room code"></div>
+    </div>
+    <div class="row" style="gap:10px;flex-wrap:wrap">
+      <button type="button" id="phoneMultiHost">Create Room</button>
+      <button type="button" class="secondary" id="phoneMultiJoin">Join Room</button>
+      <button type="button" class="secondary" id="phoneMultiLeave">Leave Room</button>
+    </div>
+    <p id="phoneMultiStatus" class="status" aria-live="polite">Not connected to a room.</p>
+    <div id="phoneMultiGame" class="hidden">
+      <div class="quiz-meta"><span id="phoneMultiProgress"></span><span id="phoneMultiScores"></span></div>
+      <div class="quiz-question" id="phoneMultiQuestion"></div>
+      <div class="quiz-options" id="phoneMultiOptions"></div>
+      <p class="muted" id="phoneMultiFeedback" aria-live="polite"></p>
+      <button type="button" id="phoneMultiNext" class="hidden">Next Question</button>
+    </div>
+  </section>
 </div>
 
 <div id="settingsScreen" class="screen hidden feature-screen">
@@ -2430,5 +2452,74 @@ body{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important}
   .social-bottom-nav{bottom:calc(2px + env(safe-area-inset-bottom,0px))!important}
 }
 </style>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script id="phone-multiplayer">
+(function(){
+  const $m=id=>document.getElementById(id);
+  let peer=null, conn=null, isHost=false, roomQuestions=[], roomIndex=0, scores={host:0,guest:0}, answered={host:false,guest:false}, myAnswer=null, currentLevel='Easy';
+  function status(t){if($m('phoneMultiStatus'))$m('phoneMultiStatus').textContent=t}
+  function clean(){try{conn&&conn.close()}catch(e){}try{peer&&peer.destroy()}catch(e){}conn=null;peer=null;isHost=false;roomQuestions=[];roomIndex=0;scores={host:0,guest:0};answered={host:false,guest:false};myAnswer=null;$m('phoneMultiGame')?.classList.add('hidden');$m('phoneMultiNext')?.classList.add('hidden');}
+  function connectPeer(){if(!window.Peer){status('Could not load multiplayer networking. Check your internet connection and reload.');return null}peer=new Peer();peer.on('error',e=>status('Connection error: '+(e.type||e.message||'please try again')));peer.on('disconnected',()=>status('Connection lost. Check your internet and try again.'));return peer}
+  function renderQuestion(q,idx,total){
+    $m('phoneMultiGame').classList.remove('hidden');$m('phoneMultiNext').classList.add('hidden');
+    $m('phoneMultiProgress').textContent='Question '+(idx+1)+' of '+total;
+    $m('phoneMultiScores').textContent='You: '+(isHost?scores.host:scores.guest)+' · Opponent: '+(isHost?scores.guest:scores.host);
+    $m('phoneMultiQuestion').textContent=q.q;$m('phoneMultiFeedback').textContent='Choose an answer. Both players answer each question.';
+    const wrap=$m('phoneMultiOptions');wrap.innerHTML='';
+    q.opts.forEach((opt,i)=>{const b=document.createElement('button');b.type='button';b.className='quiz-option';b.textContent=String.fromCharCode(65+i)+'. '+opt;b.addEventListener('click',()=>submitAnswer(i));wrap.appendChild(b)});
+    myAnswer=null;
+  }
+  function sendState(type,extra={}){if(conn&&conn.open)conn.send({type,...extra})}
+  function startHostRound(){
+    if(roomIndex>=roomQuestions.length){const result='Game finished! '+(scores.host===scores.guest?'It is a tie.':scores.host>scores.guest?'Host wins!':'Guest wins!')+' Final score — Host: '+scores.host+', Guest: '+scores.guest+'.';$m('phoneMultiQuestion').textContent=result;$m('phoneMultiOptions').innerHTML='';$m('phoneMultiFeedback').textContent='';$m('phoneMultiProgress').textContent='Completed '+roomQuestions.length+' questions';$m('phoneMultiScores').textContent='Host '+scores.host+' · Guest '+scores.guest;status('Match complete.');sendState('finished',{scores});return}
+    answered={host:false,guest:false};myAnswer=null;
+    const q=roomQuestions[roomIndex];renderQuestion(q,roomIndex,roomQuestions.length);sendState('question',{q,index:roomIndex,total:roomQuestions.length,scores});
+    status('Connected! Answer the same question on both phones.');
+  }
+  function submitAnswer(i){
+    if(myAnswer!==null)return;myAnswer=i;
+    [...$m('phoneMultiOptions').children].forEach(b=>b.disabled=true);
+    $m('phoneMultiFeedback').textContent='Answer submitted. Waiting for the other player…';
+    if(isHost){answered.host=true;if(conn&&conn.open)sendState('answer',{side:'host',answer:i});checkRound()}
+    else sendState('answer',{side:'guest',answer:i});
+  }
+  function checkRound(){
+    if(!isHost||!answered.host||!answered.guest)return;
+    const q=roomQuestions[roomIndex];
+    $m('phoneMultiFeedback').textContent='Correct answer: '+q.opts[q.a]+'. '+(answered.hostCorrect?'Host answered correctly. ':'')+(answered.guestCorrect?'Guest answered correctly.':'');
+    $m('phoneMultiScores').textContent='You: '+scores.host+' · Opponent: '+scores.guest;
+    sendState('roundResult',{scores,correct:q.a,answerText:q.opts[q.a]});
+    $m('phoneMultiNext').classList.remove('hidden');
+  }
+  function hostAnswer(side,answer){
+    const q=roomQuestions[roomIndex];if(answered[side])return;
+    answered[side]=true;const correct=answer===q.a;
+    if(correct)scores[side]+=10;
+    answered[side+'Correct']=correct;
+    if(side==='host'){$m('phoneMultiFeedback').textContent='Answer submitted. Waiting for the other player…'}
+    checkRound();
+  }
+  $m('phoneMultiHost')?.addEventListener('click',()=>{
+    clean();isHost=true;currentLevel=$m('phoneMultiDifficulty').value;status('Creating room…');
+    const p=connectPeer();if(!p)return;
+    p.on('open',id=>{status('Room created. Share this code with your wife: '+id);$m('phoneMultiRoomCode').value=id;});
+    p.on('connection',c=>{if(conn){c.close();return}conn=c;conn.on('open',()=>{scores={host:0,guest:0};roomIndex=0;roomQuestions=(typeof triviaBank!=='undefined'?triviaBank[currentLevel]:[]).slice().sort(()=>Math.random()-.5);if(!roomQuestions.length){status('Trivia questions could not load.');return}sendState('welcome',{level:currentLevel,total:roomQuestions.length});startHostRound()});conn.on('data',msg=>{if(!msg||!msg.type)return;if(msg.type==='answer'&&msg.side==='guest'){hostAnswer('guest',msg.answer)}else if(msg.type==='ready'){startHostRound()}});conn.on('close',()=>status('Your opponent disconnected. The room is no longer active.'))});
+  });
+  $m('phoneMultiJoin')?.addEventListener('click',()=>{
+    const code=$m('phoneMultiRoomCode').value.trim();if(!code){status('Enter the room code your wife shared with you.');return}
+    clean();isHost=false;status('Joining room…');const p=connectPeer();if(!p)return;
+    p.on('open',()=>{conn=p.connect(code,{reliable:true});conn.on('open',()=>{status('Connected to room. Waiting for the host…');sendState('ready')});conn.on('data',msg=>{if(!msg||!msg.type)return;
+      if(msg.type==='welcome'){status('Joined! '+msg.total+' questions, '+msg.level+' difficulty.')}
+      if(msg.type==='question'){scores=msg.scores||scores;roomIndex=msg.index;renderQuestion(msg.q,msg.index,msg.total);status('Match in progress.')}
+      if(msg.type==='roundResult'){$m('phoneMultiScores').textContent='You: '+(msg.scores.guest||0)+' · Opponent: '+(msg.scores.host||0);$m('phoneMultiFeedback').textContent='Correct answer: '+msg.answerText;$m('phoneMultiNext').classList.remove('hidden')}
+      if(msg.type==='finished'){$m('phoneMultiQuestion').textContent='Game finished! '+(msg.scores.host===msg.scores.guest?'It is a tie.':msg.scores.guest>msg.scores.host?'You win!':'Host wins!');$m('phoneMultiOptions').innerHTML='';$m('phoneMultiFeedback').textContent='Final score — Host: '+msg.scores.host+', Guest: '+msg.scores.guest;$m('phoneMultiProgress').textContent='Match complete';$m('phoneMultiNext').classList.add('hidden');status('Match complete.')}
+    });conn.on('error',()=>status('Could not connect. Check the code and try again.'));conn.on('close',()=>status('Disconnected from the host.'))});
+  });
+  $m('phoneMultiNext')?.addEventListener('click',()=>{if(!isHost)return;roomIndex++;startHostRound()});
+  $m('phoneMultiLeave')?.addEventListener('click',()=>{clean();status('Left the room. Create a new room or join with a code.')});
+})();
+</script>
+
 </body>
 </html>
