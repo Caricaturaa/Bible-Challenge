@@ -2481,7 +2481,7 @@ body{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important}
     if(myAnswer!==null)return;myAnswer=i;
     [...$m('phoneMultiOptions').children].forEach(b=>b.disabled=true);
     $m('phoneMultiFeedback').textContent='Answer submitted. Waiting for the other player…';
-    if(isHost){answered.host=true;if(conn&&conn.open)sendState('answer',{side:'host',answer:i});checkRound()}
+    if(isHost){hostAnswer('host',i)}
     else sendState('answer',{side:'guest',answer:i});
   }
   function checkRound(){
