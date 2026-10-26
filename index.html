@@ -2304,11 +2304,23 @@ button:not(.social-bottom-nav button),.menu-link{border-radius:15px}
   const storedBio=localStorage.getItem('bibleChallengeProfileBio');if(storedBio&&$('profileDisplayName')?.nextElementSibling)$('profileDisplayName').nextElementSibling.textContent=storedBio;
 
   // Reference Game Room shortcuts use the existing game screens and saved records.
-  $('gameStartButton')?.addEventListener('click',()=>{navigate('gameScreen')});
-  $('gameJoinButton')?.addEventListener('click',()=>{const code=prompt('Enter a game room code. Note: online room joining requires a shared game server.');if(code&&code.trim())alert('Room codes need a shared multiplayer server before other players can join. You entered: '+code.trim())});
+  // Game Room actions: launch a playable pass-and-play session, not an inactive online placeholder.
+  $('gameStartButton')?.addEventListener('click',()=>{
+    const players=$('triviaPlayers');
+    if(players && Number(players.value)<2) players.value='2';
+    if(typeof featureScreen==='function') featureScreen('triviaScreen');
+    else if(typeof showScreen==='function') showScreen('triviaScreen');
+  });
+  $('gameJoinButton')?.addEventListener('click',()=>{
+    alert(lang==='es'
+      ? 'Las salas entre teléfonos todavía no están conectadas a un servidor compartido. Por ahora, usa Start a Game para jugar por turnos en un mismo dispositivo. No se ha creado ni unido ninguna sala en línea.'
+      : 'Cross-phone game rooms are not connected to a shared server yet. For now, use Start a Game to play pass-and-play on one device. No online room has been created or joined.');
+  });
   $('gameMyScoreButton')?.addEventListener('click',()=>{navigate('resultsScreen')});
   $('gameLeaderboardButton')?.addEventListener('click',()=>{if(window.showScreen)window.showScreen('resultsScreen');else $('resultsScreen')?.classList.remove('hidden');setTimeout(()=>$('leaderboardHeading')?.scrollIntoView({behavior:'smooth',block:'start'}),100)});
-  $('gameHowToPlayButton')?.addEventListener('click',()=>alert('Choose a Bible challenge, add players, answer or complete the Scripture prompts, then save your results to see your records and leaderboard. Results are stored on this device.'));
+  $('gameHowToPlayButton')?.addEventListener('click',()=>alert(lang==='es'
+    ? 'Elige Café y Trivia o Completa el versículo, selecciona de 1 a 4 jugadores y pasa el dispositivo entre turnos. Cada ronda de trivia usa todas las preguntas de la dificultad seleccionada. Los resultados se guardan en este dispositivo.'
+    : 'Choose Coffee and Trivia or Complete the Verse, select 1–4 players, and pass the device between turns. Each trivia round uses every question in the selected difficulty. Results are saved on this device.'));
   $('backToCommunity')?.addEventListener('click',()=>{navigate('communityScreen')});
   $('postDetailLike')?.addEventListener('click',e=>{const b=e.currentTarget;b.classList.toggle('is-active');b.firstChild.textContent=b.classList.contains('is-active')?'♥ ':'♡ '});
   $('postDetailShare')?.addEventListener('click',()=>{const text=($('postDetailText')?.textContent||'Bible Challenge post');if(navigator.share)navigator.share({title:'Bible Challenge',text}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(text).then(()=>alert('Post text copied.')).catch(()=>alert(text));else alert(text)});
@@ -2355,9 +2367,7 @@ button:not(.social-bottom-nav button),.menu-link{border-radius:15px}
   document.addEventListener('click',function(e){
     const target=e.target.closest('button,label,input');
     if(!target)return;
-    if(target.matches('#gameStartButton')){e.preventDefault();e.stopImmediatePropagation();showOnlineNotice('Multiplayer games');return}
-    if(target.matches('#gameJoinButton')){e.preventDefault();e.stopImmediatePropagation();showOnlineNotice('Joining a game');return}
-    if(target.matches('#gameLeaderboardButton')){e.preventDefault();e.stopImmediatePropagation();showOnlineNotice('Online leaderboard');return}
+    // Game Room start/join and local leaderboard have explicit local handlers above.
     if(target.matches('#communityPostButton')){e.preventDefault();e.stopImmediatePropagation();showOnlineNotice('Community posts');return}
     if(target.matches('[data-community-filter="friends"],[data-community-filter="following"]')){e.preventDefault();e.stopImmediatePropagation();showOnlineNotice(target.dataset.communityFilter==='friends'?'Friends feed':'Following feed');return}
     if(target.matches('#communityImageInput,#communityImageInput + label,[for="communityImageInput"]')){e.preventDefault();e.stopImmediatePropagation();showOnlineNotice('Posting images');return}
