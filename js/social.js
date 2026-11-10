@@ -26,6 +26,8 @@
   P.pray = '<path d="M12 3c-1 2-1.5 4-1.5 6.5v5L7 18l-2 3h7V9.5C12 7 12 5 12 3zM12 3c1 2 1.5 4 1.5 6.5v5L17 18l2 3h-7"/>';
   P.left = P.back;
   P.check2 = '<path d="m4 12.5 4.5 4.5L20 6"/>';
+  P.camera = '<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>';
+  P.image = '<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>';
   P.film = '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M3 8h18M8 3l2.5 5M14 3l2.5 5"/><path d="m10 12 5 3-5 3z" fill="currentColor"/>';
   P.mute = '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="m17 9 5 5M22 9l-5 5"/>';
   P.playbtn = '<path d="M7 4.5v15L19.5 12z" fill="currentColor" stroke="none"/>';
@@ -68,7 +70,32 @@
   function fail(e) { console.warn(e); B.toast(errText(e), "", "info"); }
   function badge(n) { return n ? '<span class="nbadge">' + (n > 99 ? "99+" : n) + "</span>" : ""; }
   function roleBadge(r) { return r === "owner" ? '<span class="rbadge owner">' + L("OWNER", "DUEÑO") + "</span>" : r === "admin" ? '<span class="rbadge">ADMIN</span>' : ""; }
-  function av(name, color, px) { return B.avatar(name, color, "", px); }
+  var PH = {}, phWant = {}, phT = null;
+  function photoOf(uid) { return PH[uid] && PH[uid].a ? A.photoUrl(PH[uid].a) : null; }
+  function av(name, color, px, uid) {
+    var h = B.avatar(name, color, "", px);
+    if (!uid) return h;
+    h = h.replace('<div class="avatar ', '<div data-uid="' + esc(uid) + '" class="avatar ');
+    var u = photoOf(uid);
+    return u ? h.replace(/<\/div>$/, '<img src="' + esc(u) + '" alt="" loading="lazy"></div>') : h;
+  }
+  function seedPhoto(p) { if (p && p.id) PH[p.id] = { a: p.avatar_path || null, b: p.banner_path || null }; }
+  function paintPhotos(root) {
+    $$("[data-uid]", root || document).forEach(function (el) {
+      var u = photoOf(el.dataset.uid), img = el.querySelector("img");
+      if (u && (!img || img.getAttribute("src") !== u)) { if (!img) { img = document.createElement("img"); img.alt = ""; el.appendChild(img); } img.src = u; }
+      else if (!u && img) img.remove();
+    });
+  }
+  function wantPhotos() {
+    $$("[data-uid]").forEach(function (el) { var id = el.dataset.uid; if (!(id in PH)) phWant[id] = 1; });
+    var ids = Object.keys(phWant); if (!ids.length || !app.me) return;
+    clearTimeout(phT); phT = setTimeout(function () {
+      var batch = Object.keys(phWant).slice(0, 100); batch.forEach(function (id) { delete phWant[id]; PH[id] = PH[id] || { a: null, b: null }; });
+      A.photos(batch).then(function (rows) { (rows || []).forEach(seedPhoto); paintPhotos(); }).catch(function () {});
+    }, 60);
+  }
+  new MutationObserver(function () { if (app.me) wantPhotos(); }).observe(document.body, { childList: true, subtree: true });
   function spinner() { return '<div class="spin"><i></i><i></i><i></i></div>'; }
   function linkify(t) { return esc(t).replace(/\n/g, "<br>"); }
 
@@ -98,7 +125,7 @@
   function route() {
     if (!app.user) { welcome(); return Promise.resolve(); }
     return A.profile().then(function (p) {
-      app.me = p;
+      app.me = p; seedPhoto(p);
       if (!p) return setupProfile();
       if (p.status === "pending_parent") return pendingScreen();
       if (p.status === "suspended") return gate(L("Account suspended", "Cuenta suspendida"), L("Your account was suspended for breaking the community rules.", "Tu cuenta fue suspendida por no cumplir las reglas de la comunidad."));
@@ -270,7 +297,7 @@
     var t = titles[app.tab];
     return '<header class="appbar">' + (t ? '<h1 class="pagetitle">' + t + "</h1>" : '<div class="brand"><img src="img/icon-192.jpg" alt=""><span class="wordmark">Bible Challenge</span></div>') +
       '<span class="spacer"></span><button class="iconbtn" data-act="search" aria-label="search">' + ic("search") + '</button><button class="iconbtn" data-act="calendar" aria-label="calendar">' + ic("cal") + '</button><button class="iconbtn" data-act="notif" aria-label="notifications">' + ic("bell") + '<span id="bellBadge">' + badge(unseen()) + "</span></button>" +
-      '<button class="avbtn" data-act="me" aria-label="profile">' + av(app.me.display_name, app.me.color, 38) + "</button></header>";
+      '<button class="avbtn" data-act="me" aria-label="profile">' + av(app.me.display_name, app.me.color, 38, app.me.id) + "</button></header>";
   }
 
   /* ---------------- home ---------------- */
@@ -286,7 +313,7 @@
       '<div id="feed"></div>';
     loadFriends().then(function (fr) {
       var s = $("#storyFriends"); if (!s) return;
-      s.innerHTML = fr.slice(0, 12).map(function (f) { return '<button class="story" data-act="profile" data-id="' + f.id + '"><span class="sring friend">' + av(f.display_name, f.color, 58) + "</span><small>" + esc(f.display_name.split(" ")[0]) + "</small></button>"; }).join("");
+      s.innerHTML = fr.slice(0, 12).map(function (f) { return '<button class="story" data-act="profile" data-id="' + f.id + '"><span class="sring friend">' + av(f.display_name, f.color, 58, f.id) + "</span><small>" + esc(f.display_name.split(" ")[0]) + "</small></button>"; }).join("");
     });
     loadFeed($("#feed"), "home");
   }
@@ -295,7 +322,7 @@
     return A.friends().then(function (f) { app.friends = f || []; return app.friends; }).catch(function () { return app.friends || []; });
   }
   function composerCard(vis) {
-    return '<button class="composer card" data-act="compose" data-vis="' + vis + '">' + av(app.me.display_name, app.me.color, 42) + '<span class="cph">' +
+    return '<button class="composer card" data-act="compose" data-vis="' + vis + '">' + av(app.me.display_name, app.me.color, 42, app.me.id) + '<span class="cph">' +
       (vis === "public" ? L("Share with the community…", "Comparte con la comunidad…") : L("What's on your heart, ", "¿Qué hay en tu corazón, ") + esc(app.me.display_name.split(" ")[0]) + "?") + "</span>" +
       '<span class="cicons"><i class="c-pr">🙏</i><i class="c-vb">📖</i></span></button>';
   }
@@ -329,7 +356,7 @@
     var kind = p.kind !== "text" && KINDS[p.kind] ? '<span class="kchip k-' + p.kind + '">' + (p.kind === "prayer" ? "🙏 " : p.kind === "verse" ? "📖 " : "🏆 ") + L(KINDS[p.kind][0], KINDS[p.kind][1]) + "</span>" : "";
     var verseBox = "";
     if (p.verse_ref) { var vi = D.VERSES.findIndex(function (x) { return x[0] === p.verse_ref; }); if (vi >= 0) { var vv = B.verse(vi); verseBox = '<div class="pverse"><p>' + esc(vv.text) + '</p><b>' + esc(vv.refT) + "</b></div>"; } }
-    return '<article class="post card" data-id="' + p.id + '"><header class="phead"><button class="pav" data-act="profile" data-id="' + p.author + '">' + av(p.display_name, p.color, 44) + '</button><div class="pmeta"><button data-act="profile" data-id="' + p.author + '"><b>' + esc(p.display_name) + "</b>" + roleBadge(p.role) + '</button><span>' + ago(p.created_at) + " · " + (p.visibility === "public" ? ic("globe") : ic("users")) + "</span></div>" +
+    return '<article class="post card" data-id="' + p.id + '"><header class="phead"><button class="pav" data-act="profile" data-id="' + p.author + '">' + av(p.display_name, p.color, 44, p.author) + '</button><div class="pmeta"><button data-act="profile" data-id="' + p.author + '"><b>' + esc(p.display_name) + "</b>" + roleBadge(p.role) + '</button><span>' + ago(p.created_at) + " · " + (p.visibility === "public" ? ic("globe") : ic("users")) + "</span></div>" +
       '<button class="iconbtn ghostbtn" data-act="pmenu" data-id="' + p.id + '" data-author="' + p.author + '" data-mine="' + (mine ? 1 : 0) + '">' + ic("more") + "</button></header>" +
       kind + '<div class="pbody">' + linkify(p.body) + "</div>" + verseBox +
       (total || p.comments ? '<div class="pstats"><span>' + (p.amen ? "🙏" : "") + (p.love ? "❤️" : "") + (p.fire ? "🔥" : "") + (total ? " " + total : "") + "</span><span>" + (p.comments ? p.comments + " " + L(p.comments === 1 ? "comment" : "comments", p.comments === 1 ? "comentario" : "comentarios") : "") + "</span></div>" : "") +
@@ -358,9 +385,9 @@
     el.classList.remove("hidden"); el.innerHTML = spinner();
     A.comments(id).then(function (cs) {
       el.innerHTML = (cs || []).map(function (c) {
-        return '<div class="cmt"><button data-act="profile" data-id="' + c.author + '">' + av(c.display_name, c.color, 32) + '</button><div class="cbub"><b>' + esc(c.display_name) + "</b><p>" + linkify(c.body) + '</p><span>' + ago(c.created_at) +
+        return '<div class="cmt"><button data-act="profile" data-id="' + c.author + '">' + av(c.display_name, c.color, 32, c.author) + '</button><div class="cbub"><b>' + esc(c.display_name) + "</b><p>" + linkify(c.body) + '</p><span>' + ago(c.created_at) +
           (c.author === app.me.id || (findPost(id) || {}).author === app.me.id || isMod() ? ' · <button class="link sm" data-act="delcmt" data-id="' + c.id + '" data-post="' + id + '">' + L("Delete", "Borrar") + "</button>" : ' · <button class="link sm" data-act="report" data-type="comment" data-id="' + c.id + '">' + L("Report", "Reportar") + "</button>") + "</span></div></div>";
-      }).join("") + '<form class="cform">' + av(app.me.display_name, app.me.color, 32) + '<input class="input" maxlength="500" placeholder="' + L("Write a comment…", "Escribe un comentario…") + '"><button class="iconbtn send" aria-label="send">' + ic("send") + "</button></form>";
+      }).join("") + '<form class="cform">' + av(app.me.display_name, app.me.color, 32, app.me.id) + '<input class="input" maxlength="500" placeholder="' + L("Write a comment…", "Escribe un comentario…") + '"><button class="iconbtn send" aria-label="send">' + ic("send") + "</button></form>";
       bindCommentForm($('.post[data-id="' + id + '"]'), id);
       var inp = $("input", el); if (inp) inp.focus();
     }).catch(function (e) { el.innerHTML = '<div class="empty">' + esc(errText(e)) + "</div>"; });
@@ -379,7 +406,7 @@
   function compose(vis, kind, verseRef) {
     var minor = app.me.is_minor; if (minor) vis = "friends";
     var st = { vis: vis || "friends", kind: kind || "text", verse: verseRef || null };
-    var sh = B.sheet('<div class="row" style="margin-bottom:12px">' + av(app.me.display_name, app.me.color, 44) + '<div><b>' + esc(app.me.display_name) + '</b><div class="seg sm" id="cVis"><button data-v="friends">' + ic("users") + L("Friends", "Amigos") + '</button><button data-v="public" ' + (minor ? "disabled" : "") + ">" + ic("globe") + L("Public", "Público") + "</button></div></div></div>" +
+    var sh = B.sheet('<div class="row" style="margin-bottom:12px">' + av(app.me.display_name, app.me.color, 44, app.me.id) + '<div><b>' + esc(app.me.display_name) + '</b><div class="seg sm" id="cVis"><button data-v="friends">' + ic("users") + L("Friends", "Amigos") + '</button><button data-v="public" ' + (minor ? "disabled" : "") + ">" + ic("globe") + L("Public", "Público") + "</button></div></div></div>" +
       '<textarea class="input big" id="cText" maxlength="2000" placeholder="' + L("Write something that builds others up…", "Escribe algo que edifique a otros…") + '"></textarea><div id="cVerse"></div>' +
       '<div class="chips" id="cKind" style="margin:12px 0"><button class="chipbtn" data-k="text">✏️ ' + L("Post", "Publicación") + '</button><button class="chipbtn" data-k="prayer">🙏 ' + L("Prayer request", "Pedido de oración") + '</button><button class="chipbtn" data-k="verse">📖 ' + L("Verse of the day", "Versículo del día") + "</button></div>" +
       (minor ? '<p class="muted small">' + ic("lock").replace("<svg", '<svg style="width:13px;height:13px;vertical-align:-2px"') + " " + L("Your posts are visible to your friends only.", "Tus publicaciones solo las ven tus amigos.") + "</p>" : "") +
@@ -449,15 +476,17 @@
     Promise.all([mine ? Promise.resolve(app.me) : A.getProfile(id), loadFriends(true)]).then(function (r) {
       var p = r[0];
       if (!p) { st.body.innerHTML = '<div class="empty">' + L("This profile isn't available.", "Este perfil no está disponible.") + "</div>"; return; }
-      var friend = r[1].some(function (f) { return f.id === id; });
+      var friend = r[1].some(function (f) { return f.id === id; }); seedPhoto(p);
       $(".ttl", st.el).textContent = p.display_name;
       var lv = B.level(S().xp);
-      st.body.innerHTML = '<div class="cover" style="--a1:' + B.COLORS[p.color % 8][0] + ";--a2:" + B.COLORS[p.color % 8][1] + '"></div><div class="phero">' + av(p.display_name, p.color, 96) +
+      var bn = A.photoUrl(p.banner_path);
+      st.body.innerHTML = '<div class="cover' + (bn ? " hasimg" : "") + '" style="--a1:' + B.COLORS[p.color % 8][0] + ";--a2:" + B.COLORS[p.color % 8][1] + (bn ? ";background-image:url(" + esc(bn) + ")" : "") + '">' + (mine ? '<button class="iconbtn glass coveredit" data-x3="banner">' + ic("camera") + "</button>" : "") + '</div><div class="phero"><div class="avwrap">' + av(p.display_name, p.color, 96, p.id) + (mine ? '<button class="avedit" data-x3="avatar">' + ic("camera") + "</button>" : "") + "</div>" +
         '<h2>' + esc(p.display_name) + roleBadge(p.role) + '</h2><div class="muted">@' + esc(p.username) + "</div>" + (p.bio ? '<p class="bio">' + esc(p.bio) + "</p>" : "") +
         (mine ? '<div class="pstatsrow"><div><b>' + r[1].length + "</b><span>" + L("Friends", "Amigos") + "</span></div><div><b>" + lv + "</b><span>" + L("Level", "Nivel") + "</span></div><div><b>" + B.streakNow() + "</b><span>" + L("Streak", "Racha") + "</span></div></div>" : "") +
         '<div class="row wrap" id="pActs" style="justify-content:center;margin-top:14px"></div></div>' +
         (mine ? '<div class="section"><h2>' + L("Achievements", "Logros") + '</h2><span class="more">' + Object.keys(S().ach).length + "/" + B.ACH.length + '</span></div><div class="badges">' + B.ACH.map(function (x) { var on = !!S().ach[x[0]]; return '<div class="badge ' + (on ? "" : "locked") + '"><div class="md">' + ic(x[1]) + "</div><span>" + L(x[2], x[3]) + "</span></div>"; }).join("") + "</div>" : "") +
         '<div class="section"><h2>' + L("Posts", "Publicaciones") + '</h2></div><div id="pFeed"></div>';
+      $$("[data-x3]", st.body).forEach(function (b) { b.onclick = function () { pickPhoto(b.dataset.x3, function () { st.close(); openProfile(id); }); }; });
       var acts = $("#pActs", st.body);
       function paintActs(rel) {
         if (mine) { acts.innerHTML = '<button class="btn gold sm" data-x2="edit">' + ic("edit") + L("Edit profile", "Editar perfil") + '</button><button class="btn ghost sm" data-x2="friends">' + ic("users") + L("Friends", "Amigos") + '</button><button class="btn ghost sm" data-x2="settings">' + ic("gear") + "</button>"; }
@@ -488,13 +517,51 @@
       loadFeed($("#pFeed", st.body), "user", id);
     }).catch(function (e) { st.body.innerHTML = '<div class="empty">' + esc(errText(e)) + "</div>"; });
   }
+  // crop and shrink a picked picture on the phone before uploading
+  function cropImage(file, W, H) {
+    return new Promise(function (res, rej) {
+      var img = new Image(), url = URL.createObjectURL(file);
+      img.onload = function () {
+        var s = Math.max(W / img.width, H / img.height), w = W / s, h = H / s, x = (img.width - w) / 2, y = (img.height - h) / 2;
+        var c = document.createElement("canvas"); c.width = W; c.height = H; c.getContext("2d").drawImage(img, x, y, w, h, 0, 0, W, H);
+        URL.revokeObjectURL(url); c.toBlob(function (b) { b ? res(b) : rej(new Error("image")); }, "image/jpeg", .86);
+      };
+      img.onerror = function () { rej(new Error("image")); }; img.src = url;
+    });
+  }
+  function pickPhoto(kind, done) {
+    var has = kind === "avatar" ? app.me.avatar_path : app.me.banner_path;
+    var sh = B.sheet("<h2>" + (kind === "avatar" ? L("Profile picture", "Foto de perfil") : L("Profile banner", "Portada del perfil")) + "</h2>" +
+      '<div class="phprev pk-' + kind + '" id="phPrev">' + (kind === "avatar" ? av(app.me.display_name, app.me.color, 140, app.me.id) : '<div class="bannerprev" style="' + (has ? "background-image:url(" + esc(A.photoUrl(has)) + ")" : "") + '"></div>') + "</div>" +
+      '<label class="btn gold block" style="margin-top:14px">' + ic("image") + L("Choose a photo", "Elegir una foto") + '<input type="file" accept="image/*" id="phFile" hidden></label>' +
+      (has ? '<button class="btn ghost block" id="phDel" style="margin-top:10px;color:var(--bad)">' + ic("trash") + L("Remove", "Quitar") + "</button>" : "") +
+      '<p class="ferr" id="phErr" style="margin-top:10px"></p><p class="muted small center">' + L("Please use appropriate photos. Inappropriate photos can be removed.", "Usa fotos apropiadas. Las fotos inapropiadas se pueden quitar.") + "</p>");
+    var err = $("#phErr", sh);
+    $("#phFile", sh).onchange = function () {
+      var f = this.files && this.files[0]; if (!f) return; err.textContent = "";
+      if (!/^image\//.test(f.type)) { err.textContent = L("That file isn't a picture.", "Ese archivo no es una foto."); return; }
+      var lab = this.parentNode; lab.classList.add("busy"); lab.firstChild && (lab.lastChild.previousSibling.textContent = L("Uploading…", "Subiendo…"));
+      cropImage(f, kind === "avatar" ? 480 : 1200, kind === "avatar" ? 480 : 420).then(function (blob) {
+        return A.uploadPhoto(kind, blob, has);
+      }).then(function (path) {
+        if (kind === "avatar") app.me.avatar_path = path; else app.me.banner_path = path;
+        seedPhoto(app.me); paintPhotos(); B.closeSheet(); B.sfx("good"); B.toast(L("Saved!", "¡Guardado!"), "", "check"); render(true); if (done) done();
+      }).catch(function (e) { lab.classList.remove("busy"); err.textContent = /image/.test(e.message) ? L("We couldn't open that picture. Try another one.", "No pudimos abrir esa foto. Prueba con otra.") : errText(e); });
+    };
+    var del = $("#phDel", sh);
+    if (del) del.onclick = function () {
+      A.removePhoto(kind, has).then(function () { if (kind === "avatar") app.me.avatar_path = null; else app.me.banner_path = null; seedPhoto(app.me); paintPhotos(); B.closeSheet(); render(true); if (done) done(); }).catch(fail);
+    };
+  }
   function editProfile(done) {
     var c = app.me.color;
-    var sh = B.sheet("<h2>" + L("Edit profile", "Editar perfil") + '</h2><label class="field"><span>' + L("Name", "Nombre") + '</span><input class="input" id="eName" maxlength="30" value="' + esc(app.me.display_name) + '"></label>' +
+    var sh = B.sheet("<h2>" + L("Edit profile", "Editar perfil") + '</h2><div class="row" style="gap:10px;margin:8px 0 16px"><button class="btn ghost sm" id="ePic">' + ic("camera") + L("Profile picture", "Foto de perfil") + '</button><button class="btn ghost sm" id="eBan">' + ic("image") + L("Banner", "Portada") + "</button></div>" + '<label class="field"><span>' + L("Name", "Nombre") + '</span><input class="input" id="eName" maxlength="30" value="' + esc(app.me.display_name) + '"></label>' +
       '<label class="field"><span>' + L("About me", "Sobre mí") + '</span><textarea class="input" id="eBio" maxlength="160" placeholder="' + L("e.g. Saved by grace ✝️", "Ej: Salvo por gracia ✝️") + '">' + esc(app.me.bio || "") + "</textarea></label>" +
       '<div class="field"><span>' + L("Color", "Color") + '</span><div class="swatches">' + B.COLORS.map(function (x, i) { return '<button class="sw ' + (i === c ? "on" : "") + '" data-i="' + i + '" style="--a1:' + x[0] + ";--a2:" + x[1] + '"></button>'; }).join("") + "</div></div>" +
       '<button class="btn gold block" id="eSave">' + L("Save", "Guardar") + "</button>");
     $$(".sw", sh).forEach(function (b) { b.onclick = function () { c = +b.dataset.i; $$(".sw", sh).forEach(function (x) { x.classList.toggle("on", x === b); }); }; });
+    $("#ePic", sh).onclick = function () { pickPhoto("avatar", done); };
+    $("#eBan", sh).onclick = function () { pickPhoto("banner", done); };
     $("#eSave", sh).onclick = function () {
       var n = $("#eName", sh).value.trim(), bio = $("#eBio", sh).value.trim(); if (!n) return;
       A.updateProfile(n, bio, c).then(function () { app.me.display_name = n; app.me.bio = bio; app.me.color = c; S().name = n; S().color = c; B.save(); B.closeSheet(); render(true); if (done) done(); }).catch(fail);
@@ -523,7 +590,7 @@
     }
     paint(); return st;
   }
-  function personRow(f, sub, end) { return '<div class="lrow"><button data-act="profile" data-id="' + f.id + '" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;text-align:left">' + av(f.display_name, f.color, 44) + '<div style="min-width:0"><b>' + esc(f.display_name) + "</b><span>" + esc(sub || "") + '</span></div></button><div class="row">' + (end || "") + "</div></div>"; }
+  function personRow(f, sub, end) { return '<div class="lrow"><button data-act="profile" data-id="' + f.id + '" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;text-align:left">' + av(f.display_name, f.color, 44, f.id) + '<div style="min-width:0"><b>' + esc(f.display_name) + "</b><span>" + esc(sub || "") + '</span></div></button><div class="row">' + (end || "") + "</div></div>"; }
   function doSearch(q, el) {
     if (q.trim().length < 2) { el.innerHTML = '<p class="muted small center">' + L("Type at least 2 letters.", "Escribe al menos 2 letras.") + "</p>"; return; }
     el.innerHTML = spinner();
@@ -550,7 +617,7 @@
       h += '<div class="eyebrow" style="margin:16px 0 6px">' + L("Activity", "Actividad") + "</div>";
       h += act.length ? '<div class="card">' + act.map(function (a) {
         var e = a.type === "reaction" ? (REACT.filter(function (x) { return x[0] === a.detail; })[0] || [0, "🙏"])[1] : "💬";
-        return '<div class="lrow"><div style="position:relative">' + av(a.name, a.color, 42) + '<span class="nemoji">' + e + '</span></div><div style="min-width:0"><b style="font-weight:600">' + esc(a.name) + "</b> <span>" + (a.type === "reaction" ? L("reacted to your post", "reaccionó a tu publicación") : L("commented: ", "comentó: ") + "“" + esc(a.detail) + "”") + '</span><span class="small">' + ago(a.at) + "</span></div></div>";
+        return '<div class="lrow"><div style="position:relative">' + av(a.name, a.color, 42, a.user_id) + '<span class="nemoji">' + e + '</span></div><div style="min-width:0"><b style="font-weight:600">' + esc(a.name) + "</b> <span>" + (a.type === "reaction" ? L("reacted to your post", "reaccionó a tu publicación") : L("commented: ", "comentó: ") + "“" + esc(a.detail) + "”") + '</span><span class="small">' + ago(a.at) + "</span></div></div>";
       }).join("") + "</div>" : '<div class="empty">' + L("Nothing new yet.", "Todavía no hay nada nuevo.") + "</div>";
       $("#nBody", sh).innerHTML = h;
       $$("[data-acc]", sh).forEach(function (b) { b.onclick = function () { A.respond(b.dataset.acc, true).then(function () { B.sfx("good"); app.friends = null; loadNotif(); b.closest(".lrow").remove(); }).catch(fail); }; });
@@ -563,13 +630,13 @@
     el.innerHTML = '<div class="frow" id="mFriends"></div><div id="mList">' + spinner() + "</div>";
     loadFriends(true).then(function (fr) {
       var f = $("#mFriends"); if (!f) return;
-      f.innerHTML = fr.length ? fr.map(function (x) { return '<button class="story" data-act="chatwith" data-id="' + x.id + '" data-name="' + esc(x.display_name) + '" data-color="' + x.color + '">' + av(x.display_name, x.color, 54) + "<small>" + esc(x.display_name.split(" ")[0]) + "</small></button>"; }).join("") : "";
+      f.innerHTML = fr.length ? fr.map(function (x) { return '<button class="story" data-act="chatwith" data-id="' + x.id + '" data-name="' + esc(x.display_name) + '" data-color="' + x.color + '">' + av(x.display_name, x.color, 54, x.id) + "<small>" + esc(x.display_name.split(" ")[0]) + "</small></button>"; }).join("") : "";
     });
     A.conversations().then(function (cs) {
       var m = $("#mList"); if (!m) return;
       if (!cs || !cs.length) { m.innerHTML = '<div class="empty card"><div class="bigicon sm">' + ic("chat") + "</div><h3>" + L("No messages yet", "Todavía no hay mensajes") + "</h3><p>" + L("Tap a friend above to start chatting. You can message your friends only.", "Toca a un amigo arriba para empezar a chatear. Solo puedes escribirle a tus amigos.") + "</p></div>"; return; }
       m.innerHTML = '<div class="card convs">' + cs.map(function (c) {
-        return '<button class="conv ' + (c.unread ? "unread" : "") + '" data-act="chatwith" data-id="' + c.user_id + '" data-name="' + esc(c.display_name) + '" data-color="' + c.color + '">' + av(c.display_name, c.color, 52) +
+        return '<button class="conv ' + (c.unread ? "unread" : "") + '" data-act="chatwith" data-id="' + c.user_id + '" data-name="' + esc(c.display_name) + '" data-color="' + c.color + '">' + av(c.display_name, c.color, 52, c.user_id) +
           '<div class="cmain"><div class="row"><b>' + esc(c.display_name) + '</b><span class="spacer"></span><span class="ctime">' + ago(c.last_at) + "</span></div><div class=\"row\"><span class=\"clast\">" + (c.last_from_me ? L("You: ", "Tú: ") : "") + esc(c.last_body) + "</span>" + (c.unread ? '<span class="nbadge static">' + c.unread + "</span>" : "") + "</div></div></button>";
       }).join("") + "</div>";
     }).catch(function (e) { $("#mList").innerHTML = '<div class="empty">' + esc(errText(e)) + "</div>"; });
@@ -577,7 +644,7 @@
   function openChat(u) {
     app.chatWith = u;
     var s = document.createElement("div"); s.className = "stage social chat";
-    s.innerHTML = '<div class="sky"></div><div class="chathead"><button class="iconbtn" data-x="1">' + ic("back") + '</button><button class="chwho" data-act="profile" data-id="' + u.id + '">' + av(u.display_name, u.color, 40) + "<b>" + esc(u.display_name) + '</b></button><span class="spacer"></span><button class="iconbtn" id="chMore">' + ic("more") + '</button></div>' +
+    s.innerHTML = '<div class="sky"></div><div class="chathead"><button class="iconbtn" data-x="1">' + ic("back") + '</button><button class="chwho" data-act="profile" data-id="' + u.id + '">' + av(u.display_name, u.color, 40, u.id) + "<b>" + esc(u.display_name) + '</b></button><span class="spacer"></span><button class="iconbtn" id="chMore">' + ic("more") + '</button></div>' +
       '<div class="msgs" id="msgs">' + spinner() + '</div><form class="msgbar" id="msgForm"><input class="input" id="msgIn" maxlength="1000" autocomplete="off" placeholder="' + L("Message…", "Mensaje…") + '"><button class="sendbtn" aria-label="send">' + ic("send") + "</button></form>";
     document.body.appendChild(s);
     function close() { s.remove(); app.chatWith = null; loadNotif(); if (app.tab === "messages") render(true); }
@@ -626,7 +693,7 @@
     $$("#lbScope button", el).forEach(function (x) { x.onclick = function () { app.lb.scope = x.dataset.s; render(true); }; });
     A.leaderboard(app.lb.game, app.lb.scope).then(function (rows) {
       var e = $("#lb"); if (!e) return;
-      e.innerHTML = rows && rows.length ? rows.slice(0, 20).map(function (u, i) { return '<div class="lrow lb ' + (u.user_id === app.me.id ? "meRow" : "") + '"><b class="rank r' + (i + 1) + '">' + (i + 1) + "</b>" + av(u.display_name, u.color, 36) + '<button data-act="profile" data-id="' + u.user_id + '" style="flex:1;text-align:left"><b>' + esc(u.display_name) + '</b></button><span class="end" style="color:var(--ink);font-weight:800">' + u.best.toLocaleString() + "</span></div>"; }).join("")
+      e.innerHTML = rows && rows.length ? rows.slice(0, 20).map(function (u, i) { return '<div class="lrow lb ' + (u.user_id === app.me.id ? "meRow" : "") + '"><b class="rank r' + (i + 1) + '">' + (i + 1) + "</b>" + av(u.display_name, u.color, 36, u.user_id) + '<button data-act="profile" data-id="' + u.user_id + '" style="flex:1;text-align:left"><b>' + esc(u.display_name) + '</b></button><span class="end" style="color:var(--ink);font-weight:800">' + u.best.toLocaleString() + "</span></div>"; }).join("")
         : '<div class="empty">' + L("No scores yet. Play a round and be the first!", "Todavía no hay puntajes. ¡Juega una ronda y sé el primero!") + "</div>";
     }).catch(function (e) { $("#lb").innerHTML = '<div class="empty">' + esc(errText(e)) + "</div>"; });
   }
@@ -666,7 +733,7 @@
     var mine = r.author === app.me.id;
     return '<section class="reel" data-i="' + i + '" data-id="' + r.id + '"><video src="' + esc(r.video_url) + '" ' + (r.thumb_url ? 'poster="' + esc(r.thumb_url) + '" ' : "") + 'playsinline webkit-playsinline loop muted preload="metadata"></video>' +
       '<div class="rshade"></div><div class="rplay">' + ic("playbtn") + "</div>" +
-      '<div class="rrail"><button class="rav" data-act="profile" data-id="' + r.author + '">' + av(r.display_name, r.color, 46) + "</button>" +
+      '<div class="rrail"><button class="rav" data-act="profile" data-id="' + r.author + '">' + av(r.display_name, r.color, 46, r.author) + "</button>" +
       '<button class="rbtn ' + (r.liked ? "on" : "") + '" data-act="rlike" data-id="' + r.id + '"><span class="rh">' + ic("heart").replace('fill="none"', r.liked ? 'fill="currentColor"' : 'fill="none"') + "</span><b>" + (r.likes || "") + "</b></button>" +
       '<button class="rbtn" data-act="rcomments" data-id="' + r.id + '">' + ic("comment") + "<b>" + (r.comments || "") + "</b></button>" +
       '<button class="rbtn" data-act="rmenu" data-id="' + r.id + '" data-author="' + r.author + '" data-mine="' + (mine ? 1 : 0) + '">' + ic("more") + "</button></div>" +
@@ -689,12 +756,12 @@
   function heartBurst(id) { var el = $('.reel[data-id="' + id + '"]'); if (!el) return; var h = document.createElement("div"); h.className = "burst"; h.textContent = "❤️"; el.appendChild(h); setTimeout(function () { h.remove(); }, 900); }
   function reelComments(id) {
     var r = reelById(id);
-    var sh = B.sheet("<h2>" + L("Comments", "Comentarios") + '</h2><div id="rcList">' + spinner() + '</div><form class="cform" id="rcForm">' + av(app.me.display_name, app.me.color, 32) + '<input class="input" maxlength="500" placeholder="' + L("Add a comment…", "Agrega un comentario…") + '"><button class="iconbtn send">' + ic("send") + "</button></form>");
+    var sh = B.sheet("<h2>" + L("Comments", "Comentarios") + '</h2><div id="rcList">' + spinner() + '</div><form class="cform" id="rcForm">' + av(app.me.display_name, app.me.color, 32, app.me.id) + '<input class="input" maxlength="500" placeholder="' + L("Add a comment…", "Agrega un comentario…") + '"><button class="iconbtn send">' + ic("send") + "</button></form>");
     function load() {
       A.reelComments(id).then(function (cs) {
         var l = $("#rcList", sh); if (!l) return;
         l.innerHTML = (cs || []).length ? cs.map(function (c) {
-          return '<div class="cmt"><button data-act="profile" data-id="' + c.author + '">' + av(c.display_name, c.color, 32) + '</button><div class="cbub"><b>' + esc(c.display_name) + "</b><p>" + linkify(c.body) + "</p><span>" + ago(c.created_at) +
+          return '<div class="cmt"><button data-act="profile" data-id="' + c.author + '">' + av(c.display_name, c.color, 32, c.author) + '</button><div class="cbub"><b>' + esc(c.display_name) + "</b><p>" + linkify(c.body) + "</p><span>" + ago(c.created_at) +
             (c.author === app.me.id || (r && r.author === app.me.id) || isMod() ? ' · <button class="link sm" data-delrc="' + c.id + '">' + L("Delete", "Borrar") + "</button>" : ' · <button class="link sm" data-act="report" data-type="reel_comment" data-id="' + c.id + '">' + L("Report", "Reportar") + "</button>") + "</span></div></div>";
         }).join("") : '<div class="empty small">' + L("Be the first to comment.", "Sé el primero en comentar.") + "</div>";
         $$("[data-delrc]", l).forEach(function (b) { b.onclick = function () { A.deleteReelComment(b.dataset.delrc).then(function () { if (r) { r.comments = Math.max(0, r.comments - 1); paintReelRail(r); } load(); }).catch(fail); }; });

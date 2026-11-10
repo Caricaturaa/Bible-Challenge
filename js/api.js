@@ -35,7 +35,7 @@
     },
     createProfile: function (o) { return rpc("create_profile", { p_username: o.username, p_display_name: o.display_name, p_birth_year: o.birth_year, p_color: o.color }); },
     updateProfile: function (name, bio, color) { return rpc("update_profile", { p_display_name: name, p_bio: bio, p_color: color }); },
-    getProfile: function (id) { return client().from("profiles").select("id,username,display_name,color,bio,role,is_minor,created_at").eq("id", id).maybeSingle().then(ok); },
+    getProfile: function (id) { return client().from("profiles").select("id,username,display_name,color,bio,role,is_minor,created_at,avatar_path,banner_path").eq("id", id).maybeSingle().then(ok); },
 
     feed: function (scope, before, user) { return rpc("feed", { p_scope: scope, p_before: before || null, p_user: user || null, p_limit: 20 }); },
     createPost: function (o) { return client().from("posts").insert({ author: me.id, body: o.body, visibility: o.visibility, kind: o.kind || "text", verse_ref: o.verse_ref || null }).then(ok); },
@@ -112,6 +112,16 @@
     addReelComment: function (id, body) { return client().from("reel_comments").insert({ reel_id: id, author: me.id, body: body }).then(ok); },
     deleteReel: function (id) { return rpc("delete_reel", { p_id: id }); },
     deleteReelComment: function (id) { return rpc("delete_reel_comment", { p_id: id }); },
+
+    photos: function (ids) { return client().from("profiles").select("id,avatar_path,banner_path").in("id", ids).then(ok); },
+    photoUrl: function (path) { return path ? URL + "/storage/v1/object/public/avatars/" + path : null; },
+    uploadPhoto: function (kind, blob, oldPath) {
+      var path = me.id + "/" + kind + "-" + Date.now() + ".jpg", st = client().storage.from("avatars");
+      return st.upload(path, blob, { contentType: "image/jpeg", upsert: false }).then(ok)
+        .then(function () { return rpc("set_profile_photo", { p_kind: kind, p_path: path }); })
+        .then(function () { if (oldPath) st.remove([oldPath]).catch(function () {}); return path; });
+    },
+    removePhoto: function (kind, oldPath) { return rpc("set_profile_photo", { p_kind: kind, p_path: null }).then(function () { if (oldPath) client().storage.from("avatars").remove([oldPath]).catch(function () {}); }); },
 
     approveTeen: function (code) { return rpc("approve_teen", { p_code: code }); },
     myTeens: function () { return rpc("my_teens"); },
