@@ -113,6 +113,7 @@
     deleteReel: function (id) { return rpc("delete_reel", { p_id: id }); },
     deleteReelComment: function (id) { return rpc("delete_reel_comment", { p_id: id }); },
 
+    staff: function () { return client().from("profiles").select("id,role,badge_es").in("role", ["owner", "admin"]).then(ok); },
     photos: function (ids) { return client().from("profiles").select("id,avatar_path,banner_path").in("id", ids).then(ok); },
     photoUrl: function (path) { return path ? URL + "/storage/v1/object/public/avatars/" + path : null; },
     uploadPhoto: function (kind, blob, oldPath) {

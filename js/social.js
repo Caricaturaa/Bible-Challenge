@@ -69,7 +69,11 @@
   }
   function fail(e) { console.warn(e); B.toast(errText(e), "", "info"); }
   function badge(n) { return n ? '<span class="nbadge">' + (n > 99 ? "99+" : n) + "</span>" : ""; }
-  function roleBadge(r) { return r === "owner" ? '<span class="rbadge owner">' + L("OWNER", "DUEÑO") + "</span>" : r === "admin" ? '<span class="rbadge">ADMIN</span>' : ""; }
+  var STAFF = {};
+  function roleBadge(r, uid) {
+    var es = uid && STAFF[uid] && STAFF[uid].badge_es;
+    return r === "owner" ? '<span class="rbadge owner">' + L("OWNER", es || "DUEÑO") + "</span>" : r === "admin" ? '<span class="rbadge">ADMIN</span>' : "";
+  }
   var PH = {}, phWant = {}, phT = null;
   function photoOf(uid) { return PH[uid] && PH[uid].a ? A.photoUrl(PH[uid].a) : null; }
   function av(name, color, px, uid) {
@@ -251,6 +255,7 @@
     B.shareScore = shareScore;
     if (app.unsub) app.unsub();
     app.unsub = A.subscribe(onMessage);
+    if (A.staff) A.staff().then(function (rows) { (rows || []).forEach(function (x) { STAFF[x.id] = x; }); if (rows && rows.length) render(true); }).catch(function () {});
     clearInterval(pollT); pollT = setInterval(loadNotif, 45000); loadNotif();
     setInterval(checkAlarms, 30000); setTimeout(checkAlarms, 3000);
     go(app.tab || "home");
@@ -359,7 +364,7 @@
     var kind = p.kind !== "text" && KINDS[p.kind] ? '<span class="kchip k-' + p.kind + '">' + (p.kind === "prayer" ? "🙏 " : p.kind === "verse" ? "📖 " : "🏆 ") + L(KINDS[p.kind][0], KINDS[p.kind][1]) + "</span>" : "";
     var verseBox = "";
     if (p.verse_ref) { var vi = D.VERSES.findIndex(function (x) { return x[0] === p.verse_ref; }); if (vi >= 0) { var vv = B.verse(vi); verseBox = '<div class="pverse"><p>' + esc(vv.text) + '</p><b>' + esc(vv.refT) + "</b></div>"; } }
-    return '<article class="post card" data-id="' + p.id + '"><header class="phead"><button class="pav" data-act="profile" data-id="' + p.author + '">' + av(p.display_name, p.color, 44, p.author) + '</button><div class="pmeta"><button data-act="profile" data-id="' + p.author + '"><b>' + esc(p.display_name) + "</b>" + roleBadge(p.role) + '</button><span>' + ago(p.created_at) + " · " + (p.visibility === "public" ? ic("globe") : ic("users")) + "</span></div>" +
+    return '<article class="post card" data-id="' + p.id + '"><header class="phead"><button class="pav" data-act="profile" data-id="' + p.author + '">' + av(p.display_name, p.color, 44, p.author) + '</button><div class="pmeta"><button data-act="profile" data-id="' + p.author + '"><b>' + esc(p.display_name) + "</b>" + roleBadge(p.role, p.author) + '</button><span>' + ago(p.created_at) + " · " + (p.visibility === "public" ? ic("globe") : ic("users")) + "</span></div>" +
       '<button class="iconbtn ghostbtn" data-act="pmenu" data-id="' + p.id + '" data-author="' + p.author + '" data-mine="' + (mine ? 1 : 0) + '">' + ic("more") + "</button></header>" +
       kind + '<div class="pbody">' + linkify(p.body) + "</div>" + verseBox +
       (total || p.comments ? '<div class="pstats"><span>' + (p.amen ? "🙏" : "") + (p.love ? "❤️" : "") + (p.fire ? "🔥" : "") + (total ? " " + total : "") + "</span><span>" + (p.comments ? p.comments + " " + L(p.comments === 1 ? "comment" : "comments", p.comments === 1 ? "comentario" : "comentarios") : "") + "</span></div>" : "") +
@@ -508,7 +513,7 @@
       var lv = B.level(S().xp);
       var bn = A.photoUrl(p.banner_path);
       st.body.innerHTML = '<div class="cover' + (bn ? " hasimg" : "") + '" style="--a1:' + B.COLORS[p.color % 8][0] + ";--a2:" + B.COLORS[p.color % 8][1] + (bn ? ";background-image:url(" + esc(bn) + ")" : "") + '">' + (mine ? '<button class="iconbtn glass coveredit" data-x3="banner">' + ic("camera") + "</button>" : "") + '</div><div class="phero"><div class="avwrap">' + av(p.display_name, p.color, 96, p.id) + (mine ? '<button class="avedit" data-x3="avatar">' + ic("camera") + "</button>" : "") + "</div>" +
-        '<h2>' + esc(p.display_name) + roleBadge(p.role) + '</h2><div class="muted">@' + esc(p.username) + "</div>" + (p.bio ? '<p class="bio">' + esc(p.bio) + "</p>" : "") +
+        '<h2>' + esc(p.display_name) + roleBadge(p.role, p.id) + '</h2><div class="muted">@' + esc(p.username) + "</div>" + (p.bio ? '<p class="bio">' + esc(p.bio) + "</p>" : "") +
         (mine ? '<div class="pstatsrow"><div><b>' + r[1].length + "</b><span>" + L("Friends", "Amigos") + "</span></div><div><b>" + lv + "</b><span>" + L("Level", "Nivel") + "</span></div><div><b>" + B.streakNow() + "</b><span>" + L("Streak", "Racha") + "</span></div></div>" : "") +
         '<div class="row wrap" id="pActs" style="justify-content:center;margin-top:14px"></div></div>' +
         (mine ? '<div class="section"><h2>' + L("Achievements", "Logros") + '</h2><span class="more">' + Object.keys(S().ach).length + "/" + B.ACH.length + '</span></div><div class="badges">' + B.ACH.map(function (x) { var on = !!S().ach[x[0]]; return '<div class="badge ' + (on ? "" : "locked") + '"><div class="md">' + ic(x[1]) + "</div><span>" + L(x[2], x[3]) + "</span></div>"; }).join("") + "</div>" : "") +
@@ -765,7 +770,7 @@
       '<button class="rbtn ' + (r.liked ? "on" : "") + '" data-act="rlike" data-id="' + r.id + '"><span class="rh">' + ic("heart").replace('fill="none"', r.liked ? 'fill="currentColor"' : 'fill="none"') + "</span><b>" + (r.likes || "") + "</b></button>" +
       '<button class="rbtn" data-act="rcomments" data-id="' + r.id + '">' + ic("comment") + "<b>" + (r.comments || "") + "</b></button>" +
       '<button class="rbtn" data-act="rmenu" data-id="' + r.id + '" data-author="' + r.author + '" data-mine="' + (mine ? 1 : 0) + '">' + ic("more") + "</button></div>" +
-      '<div class="rinfo"><button data-act="profile" data-id="' + r.author + '"><b>' + esc(r.display_name) + "</b>" + roleBadge(r.role) + "</button>" +
+      '<div class="rinfo"><button data-act="profile" data-id="' + r.author + '"><b>' + esc(r.display_name) + "</b>" + roleBadge(r.role, r.author) + "</button>" +
       (r.caption ? '<p>' + linkify(r.caption) + "</p>" : "") + '<span>' + (r.visibility === "public" ? ic("globe") : ic("users")) + ago(r.created_at) + "</span></div></section>";
   }
   function reelById(id) { return R.items.filter(function (r) { return r.id === id; })[0]; }
