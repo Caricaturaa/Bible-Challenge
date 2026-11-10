@@ -312,3 +312,10 @@
 .appbar{gap:6px}
 .brand .wordmark{font-size:18px}
 @media (max-width:380px){.brand .wordmark{display:none}}
+
+/* tab bar docked to the bottom edge */
+.tabbar{bottom:0;width:100%;max-width:520px;border-radius:22px 22px 0 0;border-bottom:0;padding:6px 8px calc(4px + var(--safeB));box-shadow:0 -8px 24px -12px rgba(0,0,0,.5)}
+.view{padding-bottom:calc(96px + var(--safeB))}
+.view.immersive{padding-bottom:0}
+.rrail{bottom:calc(86px + var(--safeB))}
+.rinfo{bottom:calc(82px + var(--safeB))}
