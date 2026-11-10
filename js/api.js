@@ -124,6 +124,41 @@
     },
     removePhoto: function (kind, oldPath) { return rpc("set_profile_photo", { p_kind: kind, p_path: null }).then(function () { if (oldPath) client().storage.from("avatars").remove([oldPath]).catch(function () {}); }); },
 
+
+    /* calls (free: WebRTC peer-to-peer + Supabase realtime for signaling) */
+    vapid: "BL4AVhUltCUMcxmumFUpwM0J23ffBIiRy_ZQYhvpIjTfwIIGyUrK-y2wJH1lpX_d7yMof09QA3UDHMaJJBRBgpk",
+    startCall: function (uid, kind) { return rpc("start_call", { p_user: uid, p_kind: kind }); },
+    callStatus: function (id, st) { return rpc("set_call_status", { p_id: id, p_status: st }); },
+    callHistory: function (uid) { return rpc("call_history", { p_user: uid }); },
+    getCall: function (id) { return client().from("calls").select("*").eq("id", id).maybeSingle().then(ok); },
+    ringing: function () { return client().from("calls").select("*").eq("callee", me.id).eq("status", "ringing").gt("created_at", new Date(Date.now() - 60000).toISOString()).order("created_at", { ascending: false }).limit(1).then(ok); },
+    notifyCall: function (id) { return client().functions.invoke("notify-call", { body: { call_id: id } }).catch(function () {}); },
+    onCalls: function (cb) {
+      try {
+        var ch = client().channel("calls-" + me.id)
+          .on("postgres_changes", { event: "*", schema: "public", table: "calls", filter: "callee=eq." + me.id }, function (p) { cb(p.new, p.eventType); })
+          .on("postgres_changes", { event: "UPDATE", schema: "public", table: "calls", filter: "caller=eq." + me.id }, function (p) { cb(p.new, p.eventType); })
+          .subscribe();
+        return function () { try { client().removeChannel(ch); } catch (e) {} };
+      } catch (e) { return function () {}; }
+    },
+    callChannel: function (id, onMsg, onReady) {
+      var c = client(), ch = null, closed = false;
+      c.auth.getSession().then(function (r) {
+        if (closed) return;
+        try { c.realtime.setAuth(r.data.session ? r.data.session.access_token : null); } catch (e) {}
+        ch = c.channel("call:" + id, { config: { private: true, broadcast: { self: false } } })
+          .on("broadcast", { event: "sig" }, function (m) { onMsg(m.payload); })
+          .subscribe(function (st) { if (st === "SUBSCRIBED" && onReady) onReady(); });
+      });
+      return {
+        send: function (msg) { if (ch) ch.send({ type: "broadcast", event: "sig", payload: msg }); },
+        close: function () { closed = true; if (ch) try { c.removeChannel(ch); } catch (e) {} }
+      };
+    },
+    savePush: function (sub, lang) { var j = sub.toJSON(); return rpc("save_push_subscription", { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth, p_lang: lang }); },
+    deletePush: function (endpoint) { return rpc("delete_push_subscription", { p_endpoint: endpoint }); },
+
     approveTeen: function (code) { return rpc("approve_teen", { p_code: code }); },
     myTeens: function () { return rpc("my_teens"); },
     report: function (type, id, reason) { return client().from("reports").insert({ reporter: me.id, target_type: type, target_id: id, reason: reason }).then(ok); },

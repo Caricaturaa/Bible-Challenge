@@ -260,9 +260,11 @@
     setInterval(checkAlarms, 30000); setTimeout(checkAlarms, 3000);
     go(app.tab || "home");
     setTimeout(handleInviteParam, 600);
+    callsBoot();
   }
   function teardown() {
     clearInterval(pollT); if (app.unsub) { app.unsub(); app.unsub = null; }
+    if (CALL) hangUp(); if (app.callUnsub) { app.callUnsub(); app.callUnsub = null; }
     $("#app").classList.add("hidden"); $("#tabs").classList.add("hidden");
     $$(".stage").forEach(function (s) { s.remove(); }); B.closeSheet();
   }
@@ -660,7 +662,7 @@
 
   /* ---------------- messages ---------------- */
   function messagesTab(el) {
-    el.innerHTML = '<div class="frow" id="mFriends"></div><div id="mList">' + spinner() + "</div>";
+    el.innerHTML = pushBanner() + '<div class="frow" id="mFriends"></div><div id="mList">' + spinner() + "</div>";
     loadFriends(true).then(function (fr) {
       var f = $("#mFriends"); if (!f) return;
       f.innerHTML = fr.length ? fr.map(function (x) { return '<button class="story" data-act="chatwith" data-id="' + x.id + '" data-name="' + esc(x.display_name) + '" data-color="' + x.color + '">' + av(x.display_name, x.color, 54, x.id) + "<small>" + esc(x.display_name.split(" ")[0]) + "</small></button>"; }).join("") : "";
@@ -677,15 +679,17 @@
   function openChat(u) {
     app.chatWith = u;
     var s = document.createElement("div"); s.className = "stage social chat";
-    s.innerHTML = '<div class="sky"></div><div class="chathead"><button class="iconbtn" data-x="1">' + ic("back") + '</button><button class="chwho" data-act="profile" data-id="' + u.id + '">' + av(u.display_name, u.color, 40, u.id) + "<b>" + esc(u.display_name) + '</b></button><span class="spacer"></span><button class="iconbtn" id="chMore">' + ic("more") + '</button></div>' +
+    s.innerHTML = '<div class="sky"></div><div class="chathead"><button class="iconbtn" data-x="1">' + ic("back") + '</button><button class="chwho" data-act="profile" data-id="' + u.id + '">' + av(u.display_name, u.color, 40, u.id) + "<b>" + esc(u.display_name) + '</b></button><span class="spacer"></span><button class="iconbtn" id="chCall" aria-label="call">' + ic("call") + '</button><button class="iconbtn" id="chVideo" aria-label="video call">' + ic("video") + '</button><button class="iconbtn" id="chMore">' + ic("more") + '</button></div>' +
       '<div class="msgs" id="msgs">' + spinner() + '</div><form class="msgbar" id="msgForm"><input class="input" id="msgIn" maxlength="1000" autocomplete="off" placeholder="' + L("Message…", "Mensaje…") + '"><button class="sendbtn" aria-label="send">' + ic("send") + "</button></form>";
     document.body.appendChild(s);
     function close() { s.remove(); app.chatWith = null; loadNotif(); if (app.tab === "messages") render(true); }
     $("[data-x]", s).onclick = close;
+    $("#chCall", s).onclick = function () { startCall(u, "audio"); };
+    $("#chVideo", s).onclick = function () { startCall(u, "video"); };
     $("#chMore", s).onclick = function () { B.sheet('<div class="menu"><button class="mi" data-act="report" data-type="user" data-id="' + u.id + '">' + ic("flag") + L("Report", "Reportar") + '</button><button class="mi danger" data-act="block" data-id="' + u.id + '">' + ic("ban") + L("Block", "Bloquear") + '</button><button class="mi" data-act="closesheet">' + L("Cancel", "Cancelar") + "</button></div>"); };
     A.thread(u.id).then(function (ms) {
       var box = $("#msgs", s); box.innerHTML = (ms && ms.length) ? "" : '<div class="empty" id="chEmpty">' + L("Say hi! 👋", "¡Saluda! 👋") + "</div>";
-      (ms || []).forEach(appendBubble); A.markRead(u.id).then(loadNotif).catch(function () {});
+      (ms || []).forEach(appendBubble); refreshCallLog(u.id); A.markRead(u.id).then(loadNotif).catch(function () {});
     }).catch(function (e) { $("#msgs", s).innerHTML = '<div class="empty">' + esc(errText(e)) + "</div>"; });
     var f = $("#msgForm", s), inp = $("#msgIn", s);
     f.onsubmit = function (e) {
@@ -701,9 +705,314 @@
     var box = $("#msgs"); if (!box) return;
     var e = $("#chEmpty"); if (e) e.remove(); var sp = $(".spin", box); if (sp) sp.remove();
     var mine = m.sender === app.me.id, d = document.createElement("div");
-    d.className = "bub " + (mine ? "me" : "them") + (m.pending ? " pending" : ""); d.dataset.mid = m.id;
+    d.className = "bub " + (mine ? "me" : "them") + (m.pending ? " pending" : ""); d.dataset.mid = m.id; d.dataset.at = new Date(m.created_at).getTime();
     d.innerHTML = linkify(m.body) + '<time>' + new Date(m.created_at).toLocaleTimeString(S().lang === "es" ? "es" : "en", { hour: "numeric", minute: "2-digit" }) + "</time>";
     box.appendChild(d); box.scrollTop = box.scrollHeight;
+  }
+
+  /* ---------------- calls (voice & video, peer to peer, free) ---------------- */
+  P.call = '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>';
+  P.video = '<rect x="2.5" y="6" width="13" height="12" rx="3"/><path d="m15.5 10.5 6-3.5v10l-6-3.5z"/>';
+  P.videooff = '<rect x="2.5" y="6" width="13" height="12" rx="3"/><path d="m15.5 10.5 6-3.5v10l-6-3.5zM2 3l20 18"/>';
+  P.micoff = '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7M3 3l18 18"/>';
+  P.flip = '<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><path d="M9 13.5a3 3 0 0 1 5.2-2M15 13.5a3 3 0 0 1-5.2 2M14.5 9.5v2h-2M9.5 17.5v-2h2"/>';
+  P.hangup = '<path d="M3 14.5c5-4.7 13-4.7 18 0l-2 3-3.5-1.3v-2.7a10 10 0 0 0-7 0v2.7L5 17.5z" fill="currentColor"/>';
+  P.speaker = '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>';
+  var ICE = [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302", "stun:stun2.l.google.com:19302"] }];
+  var CALL = null;   // the call in progress (only one at a time)
+  var ringer = null;
+
+  function ringStart(outgoing) {
+    ringStop();
+    var ac; try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+    var on = true;
+    function burst() {
+      if (!on) return;
+      var t = ac.currentTime;
+      (outgoing ? [[440, 0, 1.2]] : [[880, 0, .25], [660, .3, .25], [880, .6, .25], [660, .9, .25]]).forEach(function (n) {
+        var o = ac.createOscillator(), g = ac.createGain();
+        o.type = "sine"; o.frequency.value = n[0];
+        g.gain.setValueAtTime(0, t + n[1]); g.gain.linearRampToValueAtTime(outgoing ? .06 : .18, t + n[1] + .03); g.gain.linearRampToValueAtTime(0, t + n[1] + n[2]);
+        o.connect(g); g.connect(ac.destination); o.start(t + n[1]); o.stop(t + n[1] + n[2] + .05);
+      });
+      if (!outgoing && S().haptic && navigator.vibrate) navigator.vibrate([400, 200, 400]);
+    }
+    burst(); var iv = setInterval(burst, outgoing ? 3000 : 2200);
+    ringer = function () { on = false; clearInterval(iv); try { ac.close(); } catch (e) {} };
+  }
+  function ringStop() { if (ringer) { ringer(); ringer = null; } }
+
+  function callScreen(c) {
+    var s = document.createElement("div"); s.className = "callscr " + c.kind + (c.incoming ? " inc" : ""); s.id = "callScr";
+    var u = c.other;
+    s.innerHTML = '<video id="cRemote" autoplay playsinline></video><audio id="cAudio" autoplay></audio>' +
+      '<div class="cwho">' + av(u.display_name, u.color, 112, u.id) + "<h2>" + esc(u.display_name) + '</h2><p id="cState"></p></div>' +
+      '<video id="cLocal" autoplay playsinline muted></video>' +
+      '<div class="cbar" id="cBar"></div>';
+    document.body.appendChild(s);
+    return s;
+  }
+  function paintBar() {
+    var c = CALL; if (!c) return; var bar = $("#cBar"); if (!bar) return;
+    if (c.incoming && c.state === "ringing") {
+      bar.innerHTML = '<div class="cbtnw"><button class="cbtn red" id="cDecline">' + ic("hangup") + "</button><small>" + L("Decline", "Rechazar") + '</small></div>' +
+        '<div class="cbtnw"><button class="cbtn green pulse" id="cAccept">' + ic(c.kind === "video" ? "video" : "call") + "</button><small>" + L("Accept", "Contestar") + "</small></div>";
+      $("#cDecline").onclick = function () { A.callStatus(c.id, "declined").catch(function () {}); endCall(L("Declined", "Rechazada"), true); };
+      $("#cAccept").onclick = acceptCall;
+      return;
+    }
+    var vid = c.kind === "video";
+    bar.innerHTML = '<div class="cbtnw"><button class="cbtn ' + (c.muted ? "on" : "") + '" id="cMute">' + ic(c.muted ? "micoff" : "mic") + "</button><small>" + (c.muted ? L("Unmute", "Activar") : L("Mute", "Silenciar")) + "</small></div>" +
+      (vid ? '<div class="cbtnw"><button class="cbtn ' + (c.camOff ? "on" : "") + '" id="cCam">' + ic(c.camOff ? "videooff" : "video") + "</button><small>" + L("Camera", "Cámara") + '</small></div><div class="cbtnw"><button class="cbtn" id="cFlip">' + ic("flip") + "</button><small>" + L("Flip", "Girar") + "</small></div>" : "") +
+      '<div class="cbtnw"><button class="cbtn red" id="cHang">' + ic("hangup") + "</button><small>" + L("End", "Colgar") + "</small></div>";
+    $("#cMute").onclick = function () { c.muted = !c.muted; if (c.stream) c.stream.getAudioTracks().forEach(function (t) { t.enabled = !c.muted; }); paintBar(); };
+    var cam = $("#cCam"); if (cam) cam.onclick = function () { c.camOff = !c.camOff; if (c.stream) c.stream.getVideoTracks().forEach(function (t) { t.enabled = !c.camOff; }); $("#cLocal").classList.toggle("off", c.camOff); paintBar(); };
+    var fl = $("#cFlip"); if (fl) fl.onclick = flipCamera;
+    $("#cHang").onclick = function () { hangUp(); };
+  }
+  function setState(txt) { var e = $("#cState"); if (e) e.textContent = txt; }
+  function tick() {
+    var c = CALL; if (!c || !c.startedAt) return;
+    var sec = Math.floor((Date.now() - c.startedAt) / 1000);
+    setState(Math.floor(sec / 60) + ":" + ("0" + sec % 60).slice(-2));
+  }
+
+  function getMedia(kind, facing) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.reject(new Error("nomedia"));
+    return navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: kind === "video" ? { facingMode: facing || "user", width: { ideal: 640 }, height: { ideal: 480 } } : false });
+  }
+  function mediaError(e) {
+    var n = e && e.name;
+    B.toast(L("Can't use the microphone/camera", "No se puede usar el micrófono/cámara"), n === "NotAllowedError" ? L("Allow access in your phone's settings for this site.", "Permite el acceso en los ajustes de tu teléfono para este sitio.") : "", "info");
+  }
+
+  function buildPeer() {
+    var c = CALL;
+    var pc = new RTCPeerConnection({ iceServers: ICE });
+    c.pc = pc; c.pending = [];
+    c.stream.getTracks().forEach(function (t) { pc.addTrack(t, c.stream); });
+    pc.onicecandidate = function (e) { if (e.candidate) c.sig.send({ t: "ice", c: e.candidate.toJSON ? e.candidate.toJSON() : e.candidate, from: app.me.id }); };
+    pc.ontrack = function (e) {
+      var st = e.streams && e.streams[0] ? e.streams[0] : new MediaStream([e.track]);
+      var el = c.kind === "video" ? $("#cRemote") : $("#cAudio");
+      if (el && el.srcObject !== st) { el.srcObject = st; var p = el.play(); if (p && p.catch) p.catch(function () {}); }
+    };
+    pc.onconnectionstatechange = function () {
+      var s = pc.connectionState;
+      if (s === "connected") {
+        clearTimeout(c.failT);
+        if (!c.startedAt) { c.startedAt = Date.now(); c.tickT = setInterval(tick, 1000); tick(); B.sfx("good"); }
+        $("#callScr") && $("#callScr").classList.add("live");
+      } else if (s === "failed") {
+        endCall(L("Couldn't connect. One of the networks may be blocking direct calls — try on Wi-Fi.", "No se pudo conectar. Una de las redes puede estar bloqueando llamadas directas — intenta con Wi-Fi."));
+      } else if (s === "disconnected") {
+        setState(L("Reconnecting…", "Reconectando…"));
+      }
+    };
+    return pc;
+  }
+  function flushIce() { var c = CALL; if (!c || !c.pc || !c.pc.remoteDescription) return; c.pending.splice(0).forEach(function (x) { c.pc.addIceCandidate(x).catch(function () {}); }); }
+
+  function onSignal(m) {
+    var c = CALL; if (!c || !m || m.from === app.me.id) return;
+    if (m.t === "ready" && !c.incoming && c.pc && !c.offered) {
+      c.offered = true; ringStop(); setState(L("Connecting…", "Conectando…"));
+      c.pc.createOffer().then(function (o) { return c.pc.setLocalDescription(o); }).then(function () { c.sig.send({ t: "offer", sdp: c.pc.localDescription.sdp, from: app.me.id }); }).catch(function (e) { console.warn(e); });
+    } else if (m.t === "offer" && c.incoming && c.pc && !c.answered) {
+      c.answered = true; clearInterval(c.readyT);
+      c.pc.setRemoteDescription({ type: "offer", sdp: m.sdp }).then(function () { flushIce(); return c.pc.createAnswer(); })
+        .then(function (a) { return c.pc.setLocalDescription(a); }).then(function () { c.sig.send({ t: "answer", sdp: c.pc.localDescription.sdp, from: app.me.id }); }).catch(function (e) { console.warn(e); });
+    } else if (m.t === "answer" && !c.incoming && c.pc && !c.pc.remoteDescription) {
+      c.pc.setRemoteDescription({ type: "answer", sdp: m.sdp }).then(flushIce).catch(function (e) { console.warn(e); });
+    } else if (m.t === "ice") {
+      if (c.pc && c.pc.remoteDescription) c.pc.addIceCandidate(m.c).catch(function () {}); else c.pending.push(m.c);
+    } else if (m.t === "bye") {
+      endCall(L("Call ended", "Llamada terminada"));
+    }
+  }
+
+  function startCall(u, kind) {
+    if (CALL) return;
+    if (!window.RTCPeerConnection) { B.toast(L("Calls aren't supported on this browser", "Este navegador no permite llamadas"), "", "info"); return; }
+    var c = CALL = { id: null, kind: kind, other: u, incoming: false, state: "ringing" };
+    var scr = callScreen(c); setState(L("Calling…", "Llamando…")); paintBar();
+    getMedia(kind).then(function (stream) {
+      if (CALL !== c) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
+      c.stream = stream; if (kind === "video") $("#cLocal", scr).srcObject = stream;
+      return A.startCall(u.id, kind).then(function (id) {
+        if (CALL !== c) { A.callStatus(id, "ended").catch(function () {}); return; }
+        c.id = id; buildPeer();
+        c.sig = A.callChannel(id, onSignal, function () { c.sig.send({ t: "hello", from: app.me.id }); });
+        A.notifyCall(id);
+        ringStart(true); setState(L("Ringing…", "Sonando…"));
+        c.noAnswerT = setTimeout(function () { if (CALL === c && !c.offered) { A.callStatus(id, "missed").catch(function () {}); endCall(L("No answer", "No contestó")); } }, 45000);
+      });
+    }).catch(function (e) {
+      if (CALL !== c) return;
+      if (e && e.name) mediaError(e); else fail(e);
+      endCall("", true);
+    });
+  }
+
+  function incomingCall(row) {
+    if (!row || row.status !== "ringing" || row.callee !== app.me.id) return;
+    if (CALL) { if (CALL.id !== row.id) A.callStatus(row.id, "declined").catch(function () {}); return; }
+    if (Date.now() - new Date(row.created_at).getTime() > 60000) return;
+    var finish = function (u) {
+      if (CALL) return;
+      var c = CALL = { id: row.id, kind: row.kind, other: u, incoming: true, state: "ringing" };
+      callScreen(c); setState(row.kind === "video" ? L("Incoming video call", "Videollamada entrante") : L("Incoming call", "Llamada entrante")); paintBar();
+      ringStart(false);
+      c.noAnswerT = setTimeout(function () { if (CALL === c && c.state === "ringing") endCall(L("Missed call", "Llamada perdida"), true); }, 50000);
+    };
+    var known = (app.friends || []).filter(function (f) { return f.id === row.caller; })[0];
+    if (known) finish(known);
+    else A.getProfile(row.caller).then(function (p) { finish(p || { id: row.caller, display_name: "…", color: 0 }); }).catch(function () { finish({ id: row.caller, display_name: "…", color: 0 }); });
+  }
+
+  function acceptCall() {
+    var c = CALL; if (!c || c.state !== "ringing") return;
+    c.state = "accepting"; ringStop(); clearTimeout(c.noAnswerT); $("#callScr").classList.remove("inc");
+    setState(L("Connecting…", "Conectando…")); paintBar();
+    getMedia(c.kind).then(function (stream) {
+      if (CALL !== c) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
+      c.stream = stream; if (c.kind === "video") $("#cLocal").srcObject = stream;
+      return A.callStatus(c.id, "answered").then(function () {
+        buildPeer();
+        // keep saying "ready" until the caller sends the offer
+        var n = 0, say = function () { if (CALL === c && !c.answered && n++ < 10) c.sig.send({ t: "ready", from: app.me.id }); else clearInterval(c.readyT); };
+        c.sig = A.callChannel(c.id, onSignal, function () { say(); c.readyT = setInterval(say, 1500); });
+        c.failT = setTimeout(function () { if (CALL === c && !c.startedAt) endCall(L("Couldn't connect. Try again on Wi-Fi.", "No se pudo conectar. Intenta otra vez con Wi-Fi.")); }, 30000);
+      });
+    }).catch(function (e) {
+      if (e && e.name) mediaError(e); else fail(e);
+      A.callStatus(c.id, "declined").catch(function () {}); endCall("", true);
+    });
+  }
+
+  function flipCamera() {
+    var c = CALL; if (!c || !c.stream || c.kind !== "video") return;
+    c.facing = c.facing === "environment" ? "user" : "environment";
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: c.facing, width: { ideal: 640 }, height: { ideal: 480 } } }).then(function (ns) {
+      var nt = ns.getVideoTracks()[0], old = c.stream.getVideoTracks()[0];
+      var sender = c.pc && c.pc.getSenders().filter(function (x) { return x.track && x.track.kind === "video"; })[0];
+      if (sender) sender.replaceTrack(nt);
+      if (old) { c.stream.removeTrack(old); old.stop(); }
+      c.stream.addTrack(nt); nt.enabled = !c.camOff;
+      var lv = $("#cLocal"); lv.srcObject = c.stream; lv.classList.toggle("back", c.facing === "environment");
+    }).catch(mediaError);
+  }
+
+  function hangUp() {
+    var c = CALL; if (!c) return;
+    if (c.sig) c.sig.send({ t: "bye", from: app.me.id });
+    if (c.id) A.callStatus(c.id, "ended").catch(function () {});
+    endCall(L("Call ended", "Llamada terminada"), true);
+  }
+
+  function endCall(msg, quiet) {
+    var c = CALL; if (!c) return; CALL = null;
+    ringStop(); clearTimeout(c.noAnswerT); clearTimeout(c.failT); clearInterval(c.readyT); clearInterval(c.tickT);
+    if (c.stream) c.stream.getTracks().forEach(function (t) { t.stop(); });
+    if (c.pc) try { c.pc.close(); } catch (e) {}
+    if (c.sig) setTimeout(function () { c.sig.close(); }, 600);
+    var scr = $("#callScr");
+    if (scr) {
+      if (msg) { setState(msg); scr.classList.remove("live"); $("#cBar", scr).innerHTML = ""; setTimeout(function () { scr.remove(); }, 1600); }
+      else scr.remove();
+    }
+    if (msg && !quiet) B.sfx("tap");
+    if (app.chatWith && app.chatWith.id === c.other.id) setTimeout(function () { refreshCallLog(c.other.id); }, 900);
+  }
+
+  function onCallRow(row, ev) {
+    if (!row) return;
+    if (ev === "INSERT") return incomingCall(row);
+    var c = CALL; if (!c || c.id !== row.id) return;
+    if (!c.incoming && row.status === "declined") endCall(L("Not available", "No disponible"));
+    else if (c.incoming && c.state === "ringing" && (row.status === "cancelled" || row.status === "missed" || row.status === "ended")) endCall(L("Missed call", "Llamada perdida"), true);
+    else if (row.status === "ended" && c.startedAt) endCall(L("Call ended", "Llamada terminada"));
+  }
+  function openCallById(id) {
+    if (!id || CALL) return;
+    A.getCall(id).then(function (row) { if (row && row.status === "ringing") incomingCall(row); else if (row) B.toast(L("Missed call", "Llamada perdida"), "", "info"); }).catch(function () {});
+  }
+  function callsBoot() {
+    if (app.callUnsub) app.callUnsub();
+    app.callUnsub = A.onCalls(onCallRow);
+    var q = new URLSearchParams(location.search).get("call");
+    if (q) { history.replaceState(null, "", location.pathname); openCallById(q); }
+    else A.ringing().then(function (rows) { if (rows && rows[0]) incomingCall(rows[0]); }).catch(function () {});
+    if (navigator.serviceWorker && !app.swMsg) {
+      app.swMsg = true;
+      navigator.serviceWorker.addEventListener("message", function (e) { if (e.data && e.data.type === "call") openCallById(e.data.id); });
+    }
+    pushRefresh();
+  }
+
+  /* call log inside the chat */
+  function callLine(cl) {
+    var mine = cl.caller === app.me.id, vid = cl.kind === "video", txt;
+    var dur = cl.answered_at && cl.ended_at ? Math.max(0, Math.round((new Date(cl.ended_at) - new Date(cl.answered_at)) / 1000)) : 0;
+    if (cl.status === "ended" || cl.status === "answered") txt = (vid ? L("Video call", "Videollamada") : L("Call", "Llamada")) + (dur ? " · " + Math.floor(dur / 60) + ":" + ("0" + dur % 60).slice(-2) : "");
+    else if (cl.status === "declined") txt = mine ? L("Not answered", "No contestada") : L("You declined", "Rechazaste");
+    else if (cl.status === "ringing") txt = vid ? L("Video call", "Videollamada") : L("Call", "Llamada");
+    else txt = mine ? L("No answer", "Sin respuesta") : L("Missed call", "Llamada perdida");
+    var missed = !mine && (cl.status === "missed" || cl.status === "cancelled");
+    return '<div class="callog ' + (missed ? "missed" : "") + '" data-cid="' + cl.id + '"><span>' + ic(vid ? "video" : "call") + "</span>" + esc(txt) + "<time>" + new Date(cl.created_at).toLocaleTimeString(S().lang === "es" ? "es" : "en", { hour: "numeric", minute: "2-digit" }) + "</time></div>";
+  }
+  function refreshCallLog(uid) {
+    A.callHistory(uid).then(function (cls) {
+      var box = $("#msgs"); if (!box || !app.chatWith || app.chatWith.id !== uid) return;
+      (cls || []).forEach(function (cl) {
+        var ex = $('[data-cid="' + cl.id + '"]', box), html = callLine(cl);
+        if (ex) { ex.outerHTML = html; return; }
+        var t = new Date(cl.created_at).getTime(), kids = $$("[data-at]", box), after = null;
+        kids.forEach(function (k) { if (+k.dataset.at > t && !after) after = k; });
+        var d = document.createElement("div"); d.innerHTML = html; var n = d.firstChild; n.dataset.at = t;
+        var e = $("#chEmpty", box); if (e) e.remove();
+        if (after) box.insertBefore(n, after); else box.appendChild(n);
+      });
+      box.scrollTop = box.scrollHeight;
+    }).catch(function () {});
+  }
+
+  /* phone notifications for calls (Web Push) */
+  function pushSupported() { return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window && location.protocol === "https:"; }
+  function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); }
+  function standalone() { return (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true; }
+  function b64u(s) { var p = "=".repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, "+").replace(/_/g, "/")), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
+  function pushRefresh() {
+    if (!pushSupported() || Notification.permission !== "granted") return;
+    navigator.serviceWorker.ready.then(function (r) { return r.pushManager.getSubscription(); }).then(function (sub) { if (sub) A.savePush(sub, S().lang || "es").catch(function () {}); }).catch(function () {});
+  }
+  function enablePush() {
+    if (!pushSupported()) {
+      B.sheet("<h2>" + L("Call notifications", "Avisos de llamadas") + '</h2><p class="muted">' + (isIOS() && !standalone()
+        ? L("On iPhone: tap Share ⬆️ in Safari → “Add to Home Screen”, open Bible Challenge from that icon, then turn this on again.", "En iPhone: toca Compartir ⬆️ en Safari → “Agregar a pantalla de inicio”, abre Bible Challenge desde ese ícono y vuelve a activar esto.")
+        : L("This browser can't receive notifications. You'll still get calls while the app is open.", "Este navegador no puede recibir avisos. Igual recibirás llamadas mientras la app esté abierta.")) + '</p><button class="btn gold block" data-act="closesheet">OK</button>');
+      return Promise.resolve(false);
+    }
+    return Notification.requestPermission().then(function (p) {
+      if (p !== "granted") { B.toast(L("Notifications are off", "Los avisos están apagados"), L("Turn them on in your phone's settings.", "Actívalos en los ajustes de tu teléfono."), "info"); return false; }
+      return navigator.serviceWorker.register("sw.js").then(function () { return navigator.serviceWorker.ready; }).then(function (r) {
+        return r.pushManager.getSubscription().then(function (s) { return s || r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(A.vapid) }); });
+      }).then(function (sub) { return A.savePush(sub, S().lang || "es"); }).then(function () {
+        S().pushOn = true; B.save(); B.sfx("good"); B.toast(L("Call notifications on", "Avisos de llamadas activados"), L("Your phone will ring even when the app is closed.", "Tu teléfono sonará aunque la app esté cerrada."), "bell"); return true;
+      });
+    }).catch(function (e) { fail(e); return false; });
+  }
+  function disablePush() {
+    S().pushOn = false; B.save();
+    if (!pushSupported()) return Promise.resolve();
+    return navigator.serviceWorker.ready.then(function (r) { return r.pushManager.getSubscription(); }).then(function (sub) {
+      if (!sub) return; var ep = sub.endpoint; return sub.unsubscribe().then(function () { return A.deletePush(ep); });
+    }).catch(function () {});
+  }
+  function pushIsOn() { return pushSupported() && Notification.permission === "granted" && S().pushOn !== false && !!S().pushOn; }
+  function pushBanner() {
+    if (pushIsOn() || S().pushDismissed) return "";
+    return '<div class="card pushban"><div class="ic">' + ic("bell") + "</div><div><b>" + L("Get calls when the app is closed", "Recibe llamadas con la app cerrada") + "</b><span>" + L("Turn on call notifications.", "Activa los avisos de llamadas.") + '</span></div><button class="btn gold sm" data-act="pushon">' + L("Turn on", "Activar") + '</button><button class="iconbtn sm" data-act="pushx" aria-label="close">' + ic("close") + "</button></div>";
   }
 
   /* ---------------- game room ---------------- */
@@ -1022,6 +1331,7 @@
         '<div class="field"><span>' + L("Appearance", "Apariencia") + '</span><div class="seg"><button data-th="dark" class="' + (s.theme !== "light" ? "on" : "") + '">' + L("Dark", "Oscuro") + '</button><button data-th="light" class="' + (s.theme === "light" ? "on" : "") + '">' + ic("sun") + L("Light", "Claro") + "</button></div></div>" +
         '<div class="field"><span>' + L("Main color", "Color principal") + '</span><div class="accents">' + ACCENTS.map(function (a) { return '<button class="acc ' + ((s.accent || "violet") === a[0] ? "on" : "") + '" data-accent-pick="' + a[0] + '"><i style="background:' + a[1] + '"></i>' + L(a[2], a[3]) + "</button>"; }).join("") + "</div></div>" +
         '<div class="lrow"><div class="ic">' + ic("volume") + "</div><div><b>" + L("Sounds", "Sonidos") + '</b></div><button class="toggle ' + (s.sound ? "on" : "") + '" data-tog="sound" style="margin-left:auto"></button></div>' +
+        '<div class="lrow"><div class="ic">' + ic("bell") + "</div><div><b>" + L("Call notifications", "Avisos de llamadas") + "</b><span>" + L("Ring even when the app is closed", "Suena aunque la app esté cerrada") + '</span></div><button class="toggle ' + (pushIsOn() ? "on" : "") + '" id="sPush" style="margin-left:auto"></button></div>' +
         '<div class="lrow"><div class="ic">' + ic("phone") + "</div><div><b>" + L("Vibration", "Vibración") + "</b><span>" + L("Android only", "Solo Android") + '</span></div><button class="toggle ' + (s.haptic ? "on" : "") + '" data-tog="haptic" style="margin-left:auto"></button></div></div>' +
         (!app.me.is_minor ? '<div class="section"><h2>' + L("Family", "Familia") + '</h2></div><div class="card"><b>' + L("Approve my child", "Aprobar a mi hijo/a") + '</b><p class="muted small" style="margin:4px 0 10px">' + L("Teens under 18 need a parent's approval. Type the code shown on their phone.", "Los menores de 18 necesitan la aprobación de su papá o mamá. Escribe el código que aparece en su teléfono.") + '</p><div class="row"><input class="input" id="tCode" maxlength="6" placeholder="ABC123" style="text-transform:uppercase;letter-spacing:.2em;font-weight:800"><button class="btn gold sm" id="tGo">' + L("Approve", "Aprobar") + '</button></div><div id="tList" style="margin-top:10px"></div></div>' : "") +
         '<div class="section"><h2>' + L("Privacy", "Privacidad") + '</h2></div><div class="card"><button class="lrow" id="sBlocks"><div class="ic">' + ic("ban") + "</div><div><b>" + L("Blocked people", "Personas bloqueadas") + "</b></div></button>" +
@@ -1035,6 +1345,7 @@
       $$("[data-th]", st.body).forEach(function (b) { b.onclick = function () { s.theme = b.dataset.th; s.themeChosen = true; B.save(); applyTheme(); paint(); }; });
       $$("[data-accent-pick]", st.body).forEach(function (b) { b.onclick = function () { s.accent = b.dataset.accentPick; B.save(); applyTheme(); B.sfx("tap"); paint(); }; });
       $$("[data-tog]", st.body).forEach(function (b) { b.onclick = function () { s[b.dataset.tog] = !s[b.dataset.tog]; B.save(); paint(); B.sfx("tap"); }; });
+      $("#sPush", st.body).onclick = function () { (pushIsOn() ? disablePush() : enablePush()).then(paint); };
       var tg = $("#tGo", st.body);
       if (tg) {
         tg.onclick = function () { var c = $("#tCode", st.body).value.trim(); if (!c) return; A.approveTeen(c).then(function (r) { B.sfx("level"); B.toast(L("Approved!", "¡Aprobado!"), r.name + L(" can now use Bible Challenge.", " ya puede usar Bible Challenge."), "shield"); app.friends = null; paint(); }).catch(fail); };
@@ -1090,6 +1401,8 @@
     else if (a === "block2") A.block(id).then(function () { B.closeSheet(); app.friends = null; $$(".stage.social").forEach(function (s) { s.remove(); }); app.chatWith = null; B.toast(L("Blocked", "Bloqueado"), "", "ban"); render(); }).catch(fail);
     else if (a === "suspend") A.modSuspend(id, true).then(function () { B.closeSheet(); B.toast(L("User suspended", "Usuario suspendido"), "", "lock"); }).catch(fail);
     else if (a === "closesheet") B.closeSheet();
+    else if (a === "pushon") enablePush().then(function (ok) { if (ok) { var b = $(".pushban"); if (b) b.remove(); } });
+    else if (a === "pushx") { S().pushDismissed = true; B.save(); var pb = $(".pushban"); if (pb) pb.remove(); }
     else if (a === "more") { var k = t.dataset.scope + (t.dataset.user || ""); if (feeds[k]) { t.disabled = true; loadFeed(feeds[k].el, t.dataset.scope, t.dataset.user || null, true); } }
     else if (a === "cfilter") { app.comFilter = t.dataset.k; $$('[data-act="cfilter"]').forEach(function (x) { x.classList.toggle("on", x === t); }); var f = feeds.community; if (f) paintFeed(f, "community"); }
     else if (a === "profile") { B.closeSheet(); openProfile(id); }

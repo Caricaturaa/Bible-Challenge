@@ -340,3 +340,45 @@ label.btn.busy{opacity:.6;pointer-events:none}
 .card.invite .bigicon svg{width:22px;height:22px}
 .card.invite b{display:block;font-size:15px}
 .card.invite span{display:block;font-size:12.5px;color:var(--muted)}
+
+/* ---- calls ---- */
+.chwho{min-width:0}.chwho b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chathead .iconbtn{flex:none}
+.callscr{position:fixed;inset:0;z-index:200;background-color:#07060d;background-image:radial-gradient(120% 80% at 50% 0%,color-mix(in srgb,var(--glow) 60%,#0b0a14) 0%,#07060d 70%);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:space-between;overflow:hidden;animation:fadein .25s ease}
+.callscr #cRemote{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .4s;background:#000}
+.callscr.video.live #cRemote{opacity:1}
+.callscr #cAudio{display:none}
+.callscr .cwho{position:relative;z-index:1;margin-top:calc(70px + var(--safeT));display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:0 24px}
+.callscr .cwho h2{margin:6px 0 0;font-size:28px;font-family:var(--serif);color:#fff}
+.callscr .cwho p{margin:0;font-size:16px;color:rgba(255,255,255,.75);font-variant-numeric:tabular-nums}
+.callscr .cwho .avatar{box-shadow:0 0 0 6px rgba(255,255,255,.08),0 0 0 14px rgba(255,255,255,.04)}
+.callscr.video.live .cwho{margin-top:calc(14px + var(--safeT));flex-direction:row;gap:10px;background:rgba(0,0,0,.35);padding:6px 14px 6px 6px;border-radius:999px;backdrop-filter:blur(8px)}
+.callscr.video.live .cwho .avatar{width:34px!important;height:34px!important;font-size:14px!important;box-shadow:none}
+.callscr.video.live .cwho h2{font-size:15px;margin:0;font-family:inherit}
+.callscr.video.live .cwho p{font-size:13px}
+.callscr #cLocal{position:absolute;right:14px;top:calc(70px + var(--safeT));width:104px;height:150px;object-fit:cover;border-radius:16px;background:#111;border:2px solid rgba(255,255,255,.25);z-index:2;transform:scaleX(-1);display:none}
+.callscr.video #cLocal{display:block}
+.callscr.video.inc #cLocal{display:none}
+.callscr #cLocal.back{transform:none}
+.callscr #cLocal.off{opacity:.15}
+.callscr .cbar{position:relative;z-index:2;display:flex;justify-content:center;gap:22px;padding:18px 18px calc(34px + var(--safeB));width:100%;background:linear-gradient(transparent,rgba(0,0,0,.45))}
+.cbtnw{display:flex;flex-direction:column;align-items:center;gap:6px}
+.cbtnw small{font-size:12px;color:rgba(255,255,255,.8)}
+.cbtn{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.16);color:#fff;backdrop-filter:blur(10px);transition:transform .12s}
+.cbtn:active{transform:scale(.92)}
+.cbtn svg{width:28px;height:28px}
+.cbtn.on{background:#fff;color:#111}
+.cbtn.red{background:#e5484d}
+.cbtn.green{background:#30a46c}
+.cbtn.pulse{animation:cpulse 1.4s infinite}
+@keyframes cpulse{0%{box-shadow:0 0 0 0 rgba(48,164,108,.6)}70%{box-shadow:0 0 0 18px rgba(48,164,108,0)}100%{box-shadow:0 0 0 0 rgba(48,164,108,0)}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.callog{align-self:center;display:flex;align-items:center;gap:8px;margin:8px auto;padding:7px 14px;border-radius:999px;background:rgba(127,127,127,.12);border:1px solid var(--line);font-size:13px;color:var(--ink);max-width:90%}
+.callog span{display:grid;place-items:center;color:var(--violet)}
+.callog svg{width:16px;height:16px}
+.callog time{opacity:.6;font-size:11px}
+.callog.missed{color:var(--bad)}.callog.missed span{color:var(--bad)}
+.pushban{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.pushban .ic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--brand);color:#fff}
+.pushban>div:nth-child(2){flex:1;min-width:0}.pushban b{display:block;font-size:14px}.pushban span{font-size:12px;color:var(--muted)}
+.pushban .iconbtn.sm{width:30px;height:30px}
