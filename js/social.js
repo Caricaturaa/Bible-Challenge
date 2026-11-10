@@ -26,6 +26,9 @@
   P.pray = '<path d="M12 3c-1 2-1.5 4-1.5 6.5v5L7 18l-2 3h7V9.5C12 7 12 5 12 3zM12 3c1 2 1.5 4 1.5 6.5v5L17 18l2 3h-7"/>';
   P.left = P.back;
   P.check2 = '<path d="m4 12.5 4.5 4.5L20 6"/>';
+  P.film = '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M3 8h18M8 3l2.5 5M14 3l2.5 5"/><path d="m10 12 5 3-5 3z" fill="currentColor"/>';
+  P.mute = '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="m17 9 5 5M22 9l-5 5"/>';
+  P.playbtn = '<path d="M7 4.5v15L19.5 12z" fill="currentColor" stroke="none"/>';
 
   var REACT = [["amen", "🙏", "Amen", "Amén"], ["love", "❤️", "Love", "Amor"], ["fire", "🔥", "Fire", "Fuego"]];
   var KINDS = { text: ["Post", "Publicación"], prayer: ["Prayer request", "Pedido de oración"], verse: ["Verse", "Versículo"], score: ["Game", "Juego"] };
@@ -246,25 +249,27 @@
     if (app.tab === "messages") render(true);
   }
 
-  var NAV = [["home", "home", "Home", "Inicio"], ["community", "globe", "Community", "Comunidad"], ["games", "play", "Games", "Juegos"], ["messages", "chat", "Messages", "Mensajes"], ["calendar", "cal", "Calendar", "Calendario"]];
+  var NAV = [["home", "home", "Home", "Inicio"], ["reels", "film", "Reels", "Reels"], ["community", "globe", "Community", "Comunidad"], ["games", "play", "Games", "Juegos"], ["messages", "chat", "Messages", "Mensajes"]];
   function go(t) { app.tab = t; render(); var v = $("#view"); v.scrollTop = 0; v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
   function render(keep) {
     var v = $("#view"), y = v.scrollTop;
     applyTheme();
     $("#tabs").innerHTML = NAV.map(function (n) {
-      return '<button class="tab ' + (n[0] === "games" ? "mid " : "") + (app.tab === n[0] ? "on" : "") + '" data-tab="' + n[0] + '"><span class="ti">' + ic(n[1]) + '<span class="tb">' + (n[0] === "messages" ? badge(app.notif.unread) : "") + "</span></span>" + L(n[2], n[3]) + "</button>";
+      return '<button class="tab ' + (app.tab === n[0] ? "on" : "") + '" data-tab="' + n[0] + '"><span class="ti">' + ic(n[1]) + '<span class="tb">' + (n[0] === "messages" ? badge(app.notif.unread) : "") + "</span></span>" + L(n[2], n[3]) + "</button>";
     }).join("");
     var t = app.tab;
-    v.innerHTML = header() + '<div id="tabBody"></div>';
+    v.classList.toggle("immersive", t === "reels");
+    if (t !== "reels" && R.obs) { R.obs.disconnect(); R.obs = null; }
+    v.innerHTML = (t === "reels" ? "" : header()) + '<div id="tabBody"></div>';
     var body = $("#tabBody");
-    if (t === "home") homeTab(body); else if (t === "community") communityTab(body); else if (t === "games") gamesTab(body); else if (t === "messages") messagesTab(body); else calendarTab(body);
+    if (t === "home") homeTab(body); else if (t === "reels") reelsTab(body); else if (t === "community") communityTab(body); else if (t === "games") gamesTab(body); else messagesTab(body);
     if (keep) v.scrollTop = y;
   }
   function header() {
-    var titles = { home: null, community: L("Community", "Comunidad"), games: L("Game Room", "Sala de Juegos"), messages: L("Messages", "Mensajes"), calendar: L("My Calendar", "Mi Calendario") };
+    var titles = { home: null, community: L("Community", "Comunidad"), games: L("Game Room", "Sala de Juegos"), messages: L("Messages", "Mensajes") };
     var t = titles[app.tab];
     return '<header class="appbar">' + (t ? '<h1 class="pagetitle">' + t + "</h1>" : '<div class="brand"><img src="img/icon-192.jpg" alt=""><span class="wordmark">Bible Challenge</span></div>') +
-      '<span class="spacer"></span><button class="iconbtn" data-act="search" aria-label="search">' + ic("search") + '</button><button class="iconbtn" data-act="notif" aria-label="notifications">' + ic("bell") + '<span id="bellBadge">' + badge(unseen()) + "</span></button>" +
+      '<span class="spacer"></span><button class="iconbtn" data-act="search" aria-label="search">' + ic("search") + '</button><button class="iconbtn" data-act="calendar" aria-label="calendar">' + ic("cal") + '</button><button class="iconbtn" data-act="notif" aria-label="notifications">' + ic("bell") + '<span id="bellBadge">' + badge(unseen()) + "</span></button>" +
       '<button class="avbtn" data-act="me" aria-label="profile">' + av(app.me.display_name, app.me.color, 38) + "</button></header>";
   }
 
@@ -626,6 +631,163 @@
     }).catch(function (e) { $("#lb").innerHTML = '<div class="empty">' + esc(errText(e)) + "</div>"; });
   }
 
+  /* ---------------- reels ---------------- */
+  var R = { items: [], end: false, loading: false, muted: true, obs: null };
+  function reelsTab(el) {
+    var v = $("#view");
+    el.innerHTML = '<div class="reelsbar"><h1>Reels</h1><span class="spacer"></span><button class="iconbtn glass" data-act="mute" aria-label="sound">' + ic(R.muted ? "mute" : "volume") + '</button><button class="iconbtn glass" data-act="upreel" aria-label="upload">' + ic("plus") + '</button></div><div class="reels" id="reels"></div>';
+    R.items = []; R.end = false; R.loading = false;
+    if (R.obs) R.obs.disconnect();
+    R.obs = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        var vid = $("video", e.target); if (!vid) return;
+        if (e.isIntersecting && e.intersectionRatio > .6) { vid.muted = R.muted; var p = vid.play(); if (p && p.catch) p.catch(function () { vid.muted = true; R.muted = true; paintMute(); vid.play().catch(function () {}); }); e.target.classList.remove("paused");
+          var i = +e.target.dataset.i; if (i >= R.items.length - 2) moreReels(); }
+        else { vid.pause(); }
+      });
+    }, { root: v, threshold: [0, .6, 1] });
+    $("#reels").innerHTML = '<div class="reel loading">' + spinner() + "</div>";
+    moreReels(true);
+  }
+  function paintMute() { $$('[data-act="mute"]').forEach(function (b) { b.innerHTML = ic(R.muted ? "mute" : "volume"); }); }
+  function moreReels(first) {
+    if (R.loading || (R.end && !first)) return; R.loading = true;
+    var before = R.items.length ? R.items[R.items.length - 1].created_at : null;
+    A.reels(before).then(function (rows) {
+      var box = $("#reels"); if (!box) return;
+      if (first) box.innerHTML = "";
+      rows = rows || []; R.end = rows.length < 8;
+      rows.forEach(function (r) { var i = R.items.length; R.items.push(r); var d = document.createElement("div"); d.innerHTML = reelHTML(r, i); var n = d.firstChild; box.appendChild(n); R.obs.observe(n); });
+      if (!R.items.length) box.innerHTML = '<div class="reel empty-reel"><div><div class="bigicon">' + ic("film") + "</div><h3>" + L("No reels yet", "Todavía no hay reels") + "</h3><p>" + L("Share a short video: a testimony, worship, a word of encouragement.", "Comparte un video corto: un testimonio, alabanza, una palabra de ánimo.") + '</p><button class="btn gold" data-act="upreel">' + ic("plus") + L("Upload a reel", "Subir un reel") + "</button></div></div>";
+    }).catch(function (e) { var box = $("#reels"); if (box && first) box.innerHTML = '<div class="reel empty-reel"><div class="empty">' + esc(errText(e)) + "</div></div>"; })
+      .then(function () { R.loading = false; });
+  }
+  function reelHTML(r, i) {
+    var mine = r.author === app.me.id;
+    return '<section class="reel" data-i="' + i + '" data-id="' + r.id + '"><video src="' + esc(r.video_url) + '" ' + (r.thumb_url ? 'poster="' + esc(r.thumb_url) + '" ' : "") + 'playsinline webkit-playsinline loop muted preload="metadata"></video>' +
+      '<div class="rshade"></div><div class="rplay">' + ic("playbtn") + "</div>" +
+      '<div class="rrail"><button class="rav" data-act="profile" data-id="' + r.author + '">' + av(r.display_name, r.color, 46) + "</button>" +
+      '<button class="rbtn ' + (r.liked ? "on" : "") + '" data-act="rlike" data-id="' + r.id + '"><span class="rh">' + ic("heart").replace('fill="none"', r.liked ? 'fill="currentColor"' : 'fill="none"') + "</span><b>" + (r.likes || "") + "</b></button>" +
+      '<button class="rbtn" data-act="rcomments" data-id="' + r.id + '">' + ic("comment") + "<b>" + (r.comments || "") + "</b></button>" +
+      '<button class="rbtn" data-act="rmenu" data-id="' + r.id + '" data-author="' + r.author + '" data-mine="' + (mine ? 1 : 0) + '">' + ic("more") + "</button></div>" +
+      '<div class="rinfo"><button data-act="profile" data-id="' + r.author + '"><b>' + esc(r.display_name) + "</b>" + roleBadge(r.role) + "</button>" +
+      (r.caption ? '<p>' + linkify(r.caption) + "</p>" : "") + '<span>' + (r.visibility === "public" ? ic("globe") : ic("users")) + ago(r.created_at) + "</span></div></section>";
+  }
+  function reelById(id) { return R.items.filter(function (r) { return r.id === id; })[0]; }
+  function likeReel(id) {
+    var r = reelById(id); if (!r) return;
+    r.liked = !r.liked; r.likes += r.liked ? 1 : -1; paintReelRail(r); B.sfx(r.liked ? "good" : "tap");
+    if (r.liked) heartBurst(id);
+    A.likeReel(id, r.liked).catch(function (e) { r.liked = !r.liked; r.likes += r.liked ? 1 : -1; paintReelRail(r); fail(e); });
+  }
+  function paintReelRail(r) {
+    var el = $('.reel[data-id="' + r.id + '"]'); if (!el) return;
+    var b = $('[data-act="rlike"]', el); b.classList.toggle("on", r.liked);
+    b.innerHTML = '<span class="rh">' + ic("heart").replace('fill="none"', r.liked ? 'fill="currentColor"' : 'fill="none"') + "</span><b>" + (r.likes || "") + "</b>";
+    $('[data-act="rcomments"] b', el).textContent = r.comments || "";
+  }
+  function heartBurst(id) { var el = $('.reel[data-id="' + id + '"]'); if (!el) return; var h = document.createElement("div"); h.className = "burst"; h.textContent = "❤️"; el.appendChild(h); setTimeout(function () { h.remove(); }, 900); }
+  function reelComments(id) {
+    var r = reelById(id);
+    var sh = B.sheet("<h2>" + L("Comments", "Comentarios") + '</h2><div id="rcList">' + spinner() + '</div><form class="cform" id="rcForm">' + av(app.me.display_name, app.me.color, 32) + '<input class="input" maxlength="500" placeholder="' + L("Add a comment…", "Agrega un comentario…") + '"><button class="iconbtn send">' + ic("send") + "</button></form>");
+    function load() {
+      A.reelComments(id).then(function (cs) {
+        var l = $("#rcList", sh); if (!l) return;
+        l.innerHTML = (cs || []).length ? cs.map(function (c) {
+          return '<div class="cmt"><button data-act="profile" data-id="' + c.author + '">' + av(c.display_name, c.color, 32) + '</button><div class="cbub"><b>' + esc(c.display_name) + "</b><p>" + linkify(c.body) + "</p><span>" + ago(c.created_at) +
+            (c.author === app.me.id || (r && r.author === app.me.id) || isMod() ? ' · <button class="link sm" data-delrc="' + c.id + '">' + L("Delete", "Borrar") + "</button>" : ' · <button class="link sm" data-act="report" data-type="reel_comment" data-id="' + c.id + '">' + L("Report", "Reportar") + "</button>") + "</span></div></div>";
+        }).join("") : '<div class="empty small">' + L("Be the first to comment.", "Sé el primero en comentar.") + "</div>";
+        $$("[data-delrc]", l).forEach(function (b) { b.onclick = function () { A.deleteReelComment(b.dataset.delrc).then(function () { if (r) { r.comments = Math.max(0, r.comments - 1); paintReelRail(r); } load(); }).catch(fail); }; });
+      }).catch(function (e) { $("#rcList", sh).innerHTML = '<div class="empty">' + esc(errText(e)) + "</div>"; });
+    }
+    load();
+    $("#rcForm", sh).onsubmit = function (e) {
+      e.preventDefault(); var inp = $("input", this), t = inp.value.trim(); if (!t) return; inp.value = "";
+      A.addReelComment(id, t).then(function () { if (r) { r.comments++; paintReelRail(r); } B.sfx("good"); load(); }).catch(fail);
+    };
+  }
+  function reelMenu(id, author, mine) {
+    B.sheet('<div class="menu">' + (mine || isMod() ? '<button class="mi danger" data-act="delreel" data-id="' + id + '">' + ic("trash") + L("Delete reel", "Borrar reel") + "</button>" : "") +
+      (!mine ? '<button class="mi" data-act="report" data-type="reel" data-id="' + id + '">' + ic("flag") + L("Report reel", "Reportar reel") + '</button><button class="mi danger" data-act="block" data-id="' + author + '">' + ic("ban") + L("Block this person", "Bloquear a esta persona") + "</button>" : "") +
+      '<button class="mi" data-act="closesheet">' + L("Cancel", "Cancelar") + "</button></div>");
+  }
+
+  // read a picked video: duration, size and a cover picture
+  function probeVideo(file) {
+    return new Promise(function (res, rej) {
+      var v = document.createElement("video"), url = URL.createObjectURL(file); v.preload = "metadata"; v.muted = true; v.playsInline = true; v.src = url;
+      var done = false; setTimeout(function () { if (!done) rej(new Error("probe")); }, 15000);
+      v.onloadedmetadata = function () {
+        var t = Math.min(0.5, (v.duration || 1) / 2); v.currentTime = t;
+      };
+      v.onseeked = function () {
+        done = true;
+        var w = v.videoWidth, h = v.videoHeight, s = Math.min(1, 540 / Math.max(w, h)), c = document.createElement("canvas"); c.width = Math.round(w * s); c.height = Math.round(h * s);
+        try { c.getContext("2d").drawImage(v, 0, 0, c.width, c.height); } catch (e) {}
+        c.toBlob(function (b) { res({ duration: v.duration, width: w, height: h, thumb: b, url: url }); }, "image/jpeg", .78);
+      };
+      v.onerror = function () { done = true; rej(new Error("probe")); };
+    });
+  }
+  // shrink a big video by replaying it into a smaller canvas and recording it (takes as long as the video)
+  function shrinkVideo(file, info, onProgress) {
+    return new Promise(function (res, rej) {
+      var MR = window.MediaRecorder, c0 = document.createElement("canvas");
+      if (!MR || !c0.captureStream) { rej(new Error("no_shrink")); return; }
+      var types = ["video/mp4;codecs=avc1,mp4a", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"], type = types.filter(function (t) { return MR.isTypeSupported && MR.isTypeSupported(t); })[0];
+      if (!type) { rej(new Error("no_shrink")); return; }
+      var s = Math.min(1, 720 / Math.min(info.width, info.height)), W = Math.round(info.width * s / 2) * 2, H = Math.round(info.height * s / 2) * 2;
+      var v = document.createElement("video"); v.src = info.url; v.playsInline = true; v.muted = false; v.volume = 0.0001;
+      c0.width = W; c0.height = H; var x = c0.getContext("2d"), stream = c0.captureStream(30);
+      try { var ac = new (window.AudioContext || window.webkitAudioContext)(), src = ac.createMediaElementSource(v), dst = ac.createMediaStreamDestination(); src.connect(dst); dst.stream.getAudioTracks().forEach(function (t) { stream.addTrack(t); }); } catch (e) {}
+      var chunks = [], rec = new MR(stream, { mimeType: type, videoBitsPerSecond: 2200000, audioBitsPerSecond: 96000 });
+      rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+      rec.onstop = function () { var b = new Blob(chunks, { type: type.split(";")[0] }); try { ac && ac.close(); } catch (e) {} res(b); };
+      var raf; function draw() { x.drawImage(v, 0, 0, W, H); onProgress(v.currentTime / info.duration); if (!v.ended) raf = requestAnimationFrame(draw); }
+      v.onended = function () { cancelAnimationFrame(raf); setTimeout(function () { rec.stop(); }, 150); };
+      v.onplay = function () { if (rec.state === "inactive") rec.start(500); draw(); };
+      v.play().catch(function () { rej(new Error("no_shrink")); });
+    });
+  }
+  function uploadReelSheet() {
+    var minor = app.me.is_minor, st = { file: null, info: null, vis: "friends" };
+    var sh = B.sheet("<h2>" + L("New reel", "Nuevo reel") + '</h2><p class="muted small">' + L("Up to 60 seconds. Keep it uplifting! 🙌", "Hasta 60 segundos. ¡Que edifique! 🙌") + '</p>' +
+      '<label class="pickvid" id="rvPick"><input type="file" accept="video/*" id="rvFile" hidden><div class="pv-empty">' + ic("film") + "<b>" + L("Choose or record a video", "Elige o graba un video") + '</b></div><video id="rvPrev" playsinline muted loop class="hidden"></video></label>' +
+      '<p class="ferr" id="rvErr"></p><label class="field"><span>' + L("Caption", "Descripción") + '</span><textarea class="input" id="rvCap" maxlength="300" placeholder="' + L("Say something about your video…", "Escribe algo sobre tu video…") + '"></textarea></label>' +
+      '<div class="seg" id="rvVis" style="margin-bottom:14px"><button data-v="friends">' + ic("users") + L("Friends", "Amigos") + '</button><button data-v="public" ' + (minor ? "disabled" : "") + ">" + ic("globe") + L("Everyone", "Todos") + "</button></div>" +
+      '<div class="upprog hidden" id="rvProg"><div class="prog"><i style="width:0%"></i></div><span></span></div><button class="btn gold block" id="rvGo" disabled>' + L("Post reel", "Publicar reel") + "</button>");
+    function paintVis() { $$("#rvVis button", sh).forEach(function (b) { b.classList.toggle("on", b.dataset.v === st.vis); }); }
+    paintVis(); $$("#rvVis button", sh).forEach(function (b) { b.onclick = function (e) { e.preventDefault(); if (!b.disabled) { st.vis = b.dataset.v; paintVis(); } }; });
+    var err = $("#rvErr", sh), goBtn = $("#rvGo", sh), prog = $("#rvProg", sh);
+    function progress(f, label) { prog.classList.remove("hidden"); $("i", prog).style.width = Math.round(f * 100) + "%"; $("span", prog).textContent = label; }
+    $("#rvFile", sh).onchange = function () {
+      var f = this.files && this.files[0]; err.textContent = ""; goBtn.disabled = true; if (!f) return;
+      if (!/^video\//.test(f.type) && !/\.(mp4|mov|webm|m4v)$/i.test(f.name)) { err.textContent = L("That file isn't a video.", "Ese archivo no es un video."); return; }
+      probeVideo(f).then(function (info) {
+        if (info.duration > 61) { err.textContent = L("The video is longer than 60 seconds. Trim it and try again.", "El video dura más de 60 segundos. Recórtalo e intenta otra vez."); return; }
+        st.file = f; st.info = info;
+        var pv = $("#rvPrev", sh); pv.src = info.url; pv.classList.remove("hidden"); $(".pv-empty", sh).classList.add("hidden"); pv.play().catch(function () {});
+        goBtn.disabled = false;
+      }).catch(function () { err.textContent = L("We couldn't read that video. Try another one.", "No pudimos leer ese video. Prueba con otro."); });
+    };
+    goBtn.onclick = function () {
+      if (!st.file) return; goBtn.disabled = true; err.textContent = "";
+      var big = st.file.size > 20 * 1048576 || Math.min(st.info.width, st.info.height) > 1080;
+      var p = big ? shrinkVideo(st.file, st.info, function (f) { progress(f * .7, L("Preparing video… ", "Preparando video… ") + Math.round(f * 100) + "%"); }).catch(function (e) {
+        if (st.file.size <= 50 * 1048576) return st.file; throw e; }) : Promise.resolve(st.file);
+      p.then(function (blob) {
+        if (blob.size > 50 * 1048576) throw new Error("too_big");
+        progress(.8, L("Uploading…", "Subiendo…"));
+        return A.uploadReel(blob, st.info.thumb, { caption: $("#rvCap", sh).value.trim(), visibility: st.vis, duration: Math.round(st.info.duration * 10) / 10 });
+      }).then(function () {
+        progress(1, ""); B.closeSheet(); B.sfx("level"); B.addXP(10); B.toast(L("Reel posted!", "¡Reel publicado!"), "", "film"); go("reels");
+      }).catch(function (e) {
+        goBtn.disabled = false; prog.classList.add("hidden");
+        err.textContent = /too_big|no_shrink|exceeded|maximum allowed size|Payload too large/i.test(e.message || "") ? L("The video is too big. Record it in lower quality (720p) or make it shorter.", "El video es muy pesado. Grábalo en menor calidad (720p) o hazlo más corto.") : errText(e);
+      });
+    };
+  }
+
   /* ---------------- daily bible ---------------- */
   function bibleScreen() {
     var v = B.verse(B.votdIndex()), r = B.dayRec(), s = S();
@@ -665,11 +827,15 @@
       '<div class="section"><h2>' + L("My notes", "Mis notas") + '</h2></div><div id="noteList"></div>';
     (app.events ? Promise.resolve(app.events) : A.events().then(function (e) { app.events = e || []; return app.events; })).then(paintCal).catch(function (e) { $("#dayList").innerHTML = '<div class="empty">' + esc(errText(e)) + "</div>"; });
   }
+  function openCalendar() {
+    var st = stage(L("My Calendar", "Mi Calendario")); st.el.classList.add("calstage");
+    calendarTab(st.body);
+  }
   function evDay(e) { return e.starts_at ? B.dstr(new Date(e.starts_at)) : null; }
   function paintCal() {
     var m = app.calMonth, y = m.getFullYear(), mo = m.getMonth(), lang = S().lang === "es" ? "es" : "en";
     var t = $("#calTitle"); if (!t) return;
-    t.textContent = m.toLocaleDateString(lang, { month: "long", year: "numeric" });
+    var mt = m.toLocaleDateString(lang, { month: "long", year: "numeric" }).replace(" de ", " "); t.textContent = mt.charAt(0).toUpperCase() + mt.slice(1);
     var first = (new Date(y, mo, 1).getDay() + 6) % 7, days = new Date(y, mo + 1, 0).getDate(), names = lang === "es" ? ["L", "M", "M", "J", "V", "S", "D"] : ["M", "T", "W", "T", "F", "S", "S"];
     var byDay = {}; app.events.forEach(function (e) { var d = evDay(e); if (d) (byDay[d] = byDay[d] || []).push(e); });
     var h = names.map(function (n) { return '<span class="cdn">' + n + "</span>"; }).join("");
@@ -717,11 +883,11 @@
       var when = null;
       if (!(k === "note" && $("#evND", sh).checked)) { var dd = $("#evD", sh).value; if (dd) { var hh = k === "note" ? "12:00" : ($("#evH", sh).value || "09:00"); when = new Date(dd + "T" + hh).toISOString(); } }
       this.disabled = true;
-      A.saveEvent({ id: e.id, title: t, kind: k, starts_at: when, notes: $("#evN", sh).value, done: e.done }).then(reloadEvents).then(function () { B.closeSheet(); B.sfx("good"); if (when) { app.calSel = B.dstr(new Date(when)); app.calMonth = new Date(new Date(when).getFullYear(), new Date(when).getMonth(), 1); } render(true); }).catch(function (x) { fail(x); });
+      A.saveEvent({ id: e.id, title: t, kind: k, starts_at: when, notes: $("#evN", sh).value, done: e.done }).then(reloadEvents).then(function () { B.closeSheet(); B.sfx("good"); if (when) { app.calSel = B.dstr(new Date(when)); app.calMonth = new Date(new Date(when).getFullYear(), new Date(when).getMonth(), 1); } paintCal(); }).catch(function (x) { fail(x); });
     };
     if (!isNew) {
-      $("#evDone", sh).onclick = function () { A.saveEvent({ id: e.id, title: e.title, kind: e.kind, starts_at: e.starts_at, notes: e.notes, done: !e.done }).then(reloadEvents).then(function () { B.closeSheet(); render(true); }).catch(fail); };
-      $("#evDel", sh).onclick = function () { A.deleteEvent(e.id).then(reloadEvents).then(function () { B.closeSheet(); render(true); }).catch(fail); };
+      $("#evDone", sh).onclick = function () { A.saveEvent({ id: e.id, title: e.title, kind: e.kind, starts_at: e.starts_at, notes: e.notes, done: !e.done }).then(reloadEvents).then(function () { B.closeSheet(); paintCal(); }).catch(fail); };
+      $("#evDel", sh).onclick = function () { A.deleteEvent(e.id).then(reloadEvents).then(function () { B.closeSheet(); paintCal(); }).catch(fail); };
       $("#evIcs", sh).onclick = function () { downloadIcs(e); };
     }
   }
@@ -834,13 +1000,27 @@
     else if (a === "chatwith") { B.closeSheet(); $$(".stage.social").forEach(function (s) { if (!s.classList.contains("chat")) s.remove(); }); openChat({ id: id, display_name: t.dataset.name, color: +t.dataset.color }); }
     else if (a === "bible") bibleScreen();
     else if (a.indexOf("g-") === 0) { B.sfx("tap"); window.Games[a.slice(2)](); }
+    else if (a === "calendar") openCalendar();
+    else if (a === "mute") { R.muted = !R.muted; $$(".reel video").forEach(function (v) { v.muted = R.muted; }); paintMute(); }
+    else if (a === "upreel") uploadReelSheet();
+    else if (a === "rlike") likeReel(id);
+    else if (a === "rcomments") reelComments(id);
+    else if (a === "rmenu") reelMenu(id, t.dataset.author, t.dataset.mine === "1");
+    else if (a === "delreel") A.deleteReel(id).then(function () { B.closeSheet(); var el = $('.reel[data-id="' + id + '"]'); if (el) el.remove(); R.items = R.items.filter(function (r) { return r.id !== id; }); B.toast(L("Reel deleted", "Reel borrado"), "", "trash"); }).catch(fail);
     else if (a === "calprev" || a === "calnext") { var m = app.calMonth; app.calMonth = new Date(m.getFullYear(), m.getMonth() + (a === "calnext" ? 1 : -1), 1); paintCal(); }
     else if (a === "calday") { app.calSel = t.dataset.d; paintCal(); }
     else if (a === "addev") editEvent();
     else if (a === "editev") editEvent(app.events.filter(function (x) { return x.id === id; })[0]);
   });
 
-  document.addEventListener("visibilitychange", function () { if (!document.hidden && app.me) loadNotif(); });
+  document.addEventListener("click", function (e) {
+    var r = e.target.closest(".reel"); if (!r || e.target.closest("button,a")) return;
+    var v = $("video", r); if (!v) return;
+    if (v.paused) { v.play().catch(function () {}); r.classList.remove("paused"); } else { v.pause(); r.classList.add("paused"); }
+  });
+  var lastTap = 0;
+  document.addEventListener("dblclick", function (e) { var r = e.target.closest(".reel"); if (!r || e.target.closest("button")) return; var it = reelById(r.dataset.id); if (it && !it.liked) likeReel(it.id); });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && app.me) loadNotif(); if (document.hidden) $$(".reel video").forEach(function (v) { v.pause(); }); });
   document.addEventListener("DOMContentLoaded", function () {
     if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(function () {});
     boot();

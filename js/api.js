@@ -84,6 +84,35 @@
     submitScore: function (game, score) { return client().from("game_scores").insert({ user_id: me.id, game: game, score: Math.max(0, Math.min(100000, Math.round(score))) }).then(ok); },
     leaderboard: function (game, scope) { return rpc("leaderboard", { p_game: game, p_scope: scope }); },
 
+    reels: function (before, user) {
+      return rpc("reels_feed", { p_before: before || null, p_user: user || null, p_limit: 8 }).then(function (rows) {
+        rows = rows || []; if (!rows.length) return rows;
+        var paths = []; rows.forEach(function (r) { paths.push(r.video_path); if (r.thumb_path) paths.push(r.thumb_path); });
+        return client().storage.from("reels").createSignedUrls(paths, 3600).then(ok).then(function (signed) {
+          var map = {}; (signed || []).forEach(function (s) { if (s.signedUrl) map[s.path] = s.signedUrl; });
+          rows.forEach(function (r) { r.video_url = map[r.video_path]; r.thumb_url = r.thumb_path ? map[r.thumb_path] : null; });
+          return rows.filter(function (r) { return r.video_url; });
+        });
+      });
+    },
+    uploadReel: function (video, thumb, o) {
+      var id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+      var ext = /webm/.test(video.type) ? "webm" : /quicktime/.test(video.type) ? "mov" : "mp4";
+      var vp = me.id + "/" + id + "." + ext, tp = thumb ? me.id + "/" + id + ".jpg" : null, st = client().storage.from("reels");
+      return st.upload(vp, video, { contentType: video.type || "video/mp4", upsert: false }).then(ok)
+        .then(function () { return thumb ? st.upload(tp, thumb, { contentType: "image/jpeg", upsert: false }).then(ok) : null; })
+        .then(function () { return client().from("reels").insert({ author: me.id, video_path: vp, thumb_path: tp, caption: o.caption || "", visibility: o.visibility, duration: o.duration || null }).then(ok); })
+        .catch(function (e) { st.remove([vp].concat(tp ? [tp] : [])).catch(function () {}); throw e; });
+    },
+    likeReel: function (id, on) {
+      var t = client().from("reel_likes");
+      return on ? t.insert({ reel_id: id, user_id: me.id }).then(ok) : t.delete().eq("reel_id", id).eq("user_id", me.id).then(ok);
+    },
+    reelComments: function (id) { return rpc("reel_comments_list", { p_reel: id }); },
+    addReelComment: function (id, body) { return client().from("reel_comments").insert({ reel_id: id, author: me.id, body: body }).then(ok); },
+    deleteReel: function (id) { return rpc("delete_reel", { p_id: id }); },
+    deleteReelComment: function (id) { return rpc("delete_reel_comment", { p_id: id }); },
+
     approveTeen: function (code) { return rpc("approve_teen", { p_code: code }); },
     myTeens: function () { return rpc("my_teens"); },
     report: function (type, id, reason) { return client().from("reports").insert({ reporter: me.id, target_type: type, target_id: id, reason: reason }).then(ok); },
