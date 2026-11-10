@@ -69,11 +69,19 @@
   function spinner() { return '<div class="spin"><i></i><i></i><i></i></div>'; }
   function linkify(t) { return esc(t).replace(/\n/g, "<br>"); }
 
+  /* ---------------- theme ---------------- */
+  var ACCENTS = [["violet", "#8f72ff", "Violet", "Violeta"], ["blue", "#3b8bff", "Blue", "Azul"], ["gold", "#f5b301", "Gold", "Dorado"], ["green", "#1fbf75", "Green", "Verde"], ["rose", "#ff4f8b", "Rose", "Rosa"]];
+  function applyTheme() {
+    var t = S().theme === "light" ? "light" : "dark", h = document.documentElement;
+    h.setAttribute("data-theme", t); h.setAttribute("data-accent", S().accent || "violet");
+    var m = $('meta[name="theme-color"]'); if (m) m.content = t === "light" ? "#f4f2fa" : "#0c0a18";
+  }
+
   /* ---------------- boot & auth ---------------- */
   function boot() {
     if (!S().lang) { S().lang = /^es/i.test(navigator.language || "es") ? "es" : "en"; B.save(); }
     document.documentElement.lang = S().lang;
-    document.documentElement.setAttribute("data-theme", S().theme === "dark" ? "dark" : "light");
+    applyTheme();
     var sp = $("#splash");
     function hide() { if (sp) { sp.classList.add("out"); setTimeout(function () { sp.remove(); sp = null; }, 600); } }
     A.ready().then(function (u) {
@@ -242,7 +250,7 @@
   function go(t) { app.tab = t; render(); var v = $("#view"); v.scrollTop = 0; v.classList.remove("enter"); void v.offsetWidth; v.classList.add("enter"); }
   function render(keep) {
     var v = $("#view"), y = v.scrollTop;
-    document.documentElement.setAttribute("data-theme", S().theme === "dark" ? "dark" : "light");
+    applyTheme();
     $("#tabs").innerHTML = NAV.map(function (n) {
       return '<button class="tab ' + (n[0] === "games" ? "mid " : "") + (app.tab === n[0] ? "on" : "") + '" data-tab="' + n[0] + '"><span class="ti">' + ic(n[1]) + '<span class="tb">' + (n[0] === "messages" ? badge(app.notif.unread) : "") + "</span></span>" + L(n[2], n[3]) + "</button>";
     }).join("");
@@ -745,7 +753,8 @@
     function paint() {
       var mod = isMod();
       st.body.innerHTML = '<div class="card"><div class="field"><span>' + L("Language", "Idioma") + '</span><div class="seg"><button data-lang="es" class="' + (s.lang === "es" ? "on" : "") + '">Español</button><button data-lang="en" class="' + (s.lang === "en" ? "on" : "") + '">English</button></div></div>' +
-        '<div class="field"><span>' + L("Appearance", "Apariencia") + '</span><div class="seg"><button data-th="light" class="' + (s.theme !== "dark" ? "on" : "") + '">' + ic("sun") + L("Light", "Claro") + '</button><button data-th="dark" class="' + (s.theme === "dark" ? "on" : "") + '">' + L("Dark", "Oscuro") + "</button></div></div>" +
+        '<div class="field"><span>' + L("Appearance", "Apariencia") + '</span><div class="seg"><button data-th="dark" class="' + (s.theme !== "light" ? "on" : "") + '">' + L("Dark", "Oscuro") + '</button><button data-th="light" class="' + (s.theme === "light" ? "on" : "") + '">' + ic("sun") + L("Light", "Claro") + "</button></div></div>" +
+        '<div class="field"><span>' + L("Main color", "Color principal") + '</span><div class="accents">' + ACCENTS.map(function (a) { return '<button class="acc ' + ((s.accent || "violet") === a[0] ? "on" : "") + '" data-accent-pick="' + a[0] + '"><i style="background:' + a[1] + '"></i>' + L(a[2], a[3]) + "</button>"; }).join("") + "</div></div>" +
         '<div class="lrow"><div class="ic">' + ic("volume") + "</div><div><b>" + L("Sounds", "Sonidos") + '</b></div><button class="toggle ' + (s.sound ? "on" : "") + '" data-tog="sound" style="margin-left:auto"></button></div>' +
         '<div class="lrow"><div class="ic">' + ic("phone") + "</div><div><b>" + L("Vibration", "Vibración") + "</b><span>" + L("Android only", "Solo Android") + '</span></div><button class="toggle ' + (s.haptic ? "on" : "") + '" data-tog="haptic" style="margin-left:auto"></button></div></div>' +
         (!app.me.is_minor ? '<div class="section"><h2>' + L("Family", "Familia") + '</h2></div><div class="card"><b>' + L("Approve my child", "Aprobar a mi hijo/a") + '</b><p class="muted small" style="margin:4px 0 10px">' + L("Teens under 18 need a parent's approval. Type the code shown on their phone.", "Los menores de 18 necesitan la aprobación de su papá o mamá. Escribe el código que aparece en su teléfono.") + '</p><div class="row"><input class="input" id="tCode" maxlength="6" placeholder="ABC123" style="text-transform:uppercase;letter-spacing:.2em;font-weight:800"><button class="btn gold sm" id="tGo">' + L("Approve", "Aprobar") + '</button></div><div id="tList" style="margin-top:10px"></div></div>' : "") +
@@ -757,7 +766,8 @@
         '<button class="btn ghost block" id="sOut" style="margin-top:18px;color:var(--bad)">' + ic("logout") + L("Sign out", "Cerrar sesión") + "</button>" +
         '<p class="foot-note">Bible Challenge 2.0 · @' + esc(app.me.username) + "<br>" + L("English Scripture: King James Version (public domain).", "Escritura en inglés: King James Version (dominio público).") + "<br>" + L("Spanish Scripture: Reina-Valera 1960 © Sociedades Bíblicas en América Latina, 1960. Renewed © Sociedades Bíblicas Unidas, 1988.", "Escritura en español: Reina-Valera 1960 © Sociedades Bíblicas en América Latina, 1960. Renovado © Sociedades Bíblicas Unidas, 1988.") + "</p>";
       $$("[data-lang]", st.body).forEach(function (b) { b.onclick = function () { s.lang = b.dataset.lang; B.save(); document.documentElement.lang = s.lang; $(".ttl", st.el).textContent = L("Settings", "Ajustes"); paint(); render(true); }; });
-      $$("[data-th]", st.body).forEach(function (b) { b.onclick = function () { s.theme = b.dataset.th; B.save(); document.documentElement.setAttribute("data-theme", s.theme === "dark" ? "dark" : "light"); paint(); }; });
+      $$("[data-th]", st.body).forEach(function (b) { b.onclick = function () { s.theme = b.dataset.th; s.themeChosen = true; B.save(); applyTheme(); paint(); }; });
+      $$("[data-accent-pick]", st.body).forEach(function (b) { b.onclick = function () { s.accent = b.dataset.accentPick; B.save(); applyTheme(); B.sfx("tap"); paint(); }; });
       $$("[data-tog]", st.body).forEach(function (b) { b.onclick = function () { s[b.dataset.tog] = !s[b.dataset.tog]; B.save(); paint(); B.sfx("tap"); }; });
       var tg = $("#tGo", st.body);
       if (tg) {

@@ -9,14 +9,14 @@
   /* ---------------- state ---------------- */
   var S = load();
   function fresh() {
-    return { v: 1, lang: null, theme: "light", sound: true, haptic: true, name: "", color: 0, xp: 0,
+    return { v: 1, lang: null, theme: "dark", accent: "violet", sound: true, haptic: true, name: "", color: 0, xp: 0,
       streak: { n: 0, last: null, best: 0 }, days: {}, favs: [], notes: {}, plan: { id: "john21", done: [] },
       stats: { trivia: { played: 0, best: 0, correct: 0, total: 0, bestCombo: 0 }, verse: { played: 0, best: 0, perfect: 0 },
         books: { played: 0, best: 0 }, sermon: { played: 0 }, family: { played: 0 } },
       ach: {}, shares: 0, family: [], created: Date.now() };
   }
   function load() {
-    try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && s.v === 1) { var m = merge(fresh(), s); if (m.theme !== 'dark') m.theme = 'light'; return m; } } catch (e) {}
+    try { var s = JSON.parse(localStorage.getItem(KEY)); if (s && s.v === 1) { var m = merge(fresh(), s); if (!m.themeChosen || (m.theme !== 'light' && m.theme !== 'dark')) m.theme = 'dark'; return m; } } catch (e) {}
     var f = fresh();
     try { // carry over the language from the old version of the app
       var old = localStorage.getItem("bibleChallengeLanguage"); if (old === "es" || old === "en") f.lang = old;
