@@ -267,3 +267,4 @@
 [data-accent="gold"] .g-family b,[data-accent="gold"] .g-family span:not(.tag){color:#2a1c05!important}
 [data-accent="gold"] .btn.gold,[data-accent="gold"] .tab.mid .ti,[data-accent="gold"] .bub.me,[data-accent="gold"] .sendbtn,[data-accent="gold"] .cday.sel{color:#2a1c05}
 [data-accent="gold"] .seg button.on,[data-accent="gold"] .chipbtn.on{color:#2a1c05}
+.onb>.langtog{position:absolute;top:calc(16px + var(--safeT));right:16px;left:auto;width:auto;max-width:none;z-index:3}
