@@ -109,6 +109,7 @@
 
   /* ---------------- boot & auth ---------------- */
   function boot() {
+    try { var m0 = location.search.match(/[?&]add=([a-z0-9_]{3,20})/i); if (m0) localStorage.setItem("bc_add", m0[1].toLowerCase()); } catch (e) {}
     if (!S().lang) { S().lang = /^es/i.test(navigator.language || "es") ? "es" : "en"; B.save(); }
     document.documentElement.lang = S().lang;
     applyTheme();
@@ -253,6 +254,7 @@
     clearInterval(pollT); pollT = setInterval(loadNotif, 45000); loadNotif();
     setInterval(checkAlarms, 30000); setTimeout(checkAlarms, 3000);
     go(app.tab || "home");
+    setTimeout(handleInviteParam, 600);
   }
   function teardown() {
     clearInterval(pollT); if (app.unsub) { app.unsub(); app.unsub = null; }
@@ -307,6 +309,7 @@
       '<span class="sinner sv">' + ic("book") + "</span></span><small>" + L("Today's verse", "Versículo") + "</small></button>" +
       '<button class="story" data-tab="games"><span class="sring ' + (done === 3 ? "done" : "") + '"><span class="sinner chal"><b>' + done + "/3</b></span></span><small>" + L("Challenge", "Reto diario") + "</small></button>" +
       '<button class="story" data-act="friends"><span class="sring add"><span class="sinner">' + ic("userplus") + "</span></span><small>" + L("Add friends", "Amigos") + "</small></button>" +
+      '<button class="story" data-act="invite"><span class="sring"><span class="sinner">' + ic("share") + "</span></span><small>" + L("Invite", "Invitar") + "</small></button>" +
       '<span id="storyFriends"></span></div>' +
       composerCard("friends") +
       '<button class="votd card" data-act="bible"><div class="eyebrow">' + ic("sun").replace("<svg", '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"') + L("Verse of the day", "Versículo del día") + '</div><p class="verse">' + esc(v.text) + '</p><div class="ref">' + esc(v.refT) + "<small>" + v.ver + "</small></div></button>" +
@@ -345,7 +348,7 @@
     var items = st.items;
     if (scope === "community" && app.comFilter !== "all") items = items.filter(function (p) { return p.kind === app.comFilter; });
     if (!items.length) {
-      st.el.innerHTML = scope === "home" ? '<div class="empty card"><div class="bigicon sm">' + ic("users") + "</div><h3>" + L("Your feed is waiting", "Tu muro está esperando") + "</h3><p>" + L("Add friends to see their posts here, or write your first post.", "Agrega amigos para ver sus publicaciones aquí, o escribe tu primera publicación.") + '</p><button class="btn gold" data-act="friends">' + ic("userplus") + L("Find friends", "Buscar amigos") + "</button></div>"
+      st.el.innerHTML = scope === "home" ? '<div class="empty card"><div class="bigicon sm">' + ic("users") + "</div><h3>" + L("Your feed is waiting", "Tu muro está esperando") + "</h3><p>" + L("Add friends to see their posts here, or write your first post.", "Agrega amigos para ver sus publicaciones aquí, o escribe tu primera publicación.") + '</p><div class="row" style="justify-content:center;gap:8px;flex-wrap:wrap"><button class="btn gold" data-act="friends">' + ic("search") + L("Find friends", "Buscar amigos") + '</button><button class="btn ghost" data-act="invite">' + ic("share") + L("Invite", "Invitar") + "</button></div></div>"
         : '<div class="empty">' + (scope === "user" ? L("No posts yet.", "Todavía no hay publicaciones.") : L("Nothing here yet. Be the first to share!", "Todavía no hay nada. ¡Sé el primero en compartir!")) + "</div>";
       return;
     }
@@ -452,6 +455,30 @@
     });
   }
 
+  /* ---------------- invite ---------------- */
+  function inviteLink() { return location.origin + location.pathname + "?add=" + encodeURIComponent(app.me.username); }
+  function invite() {
+    var url = inviteLink(), text = L("Join me on Bible Challenge! Let's share our faith, play Bible games and grow together 🙏 Add me: @", "¡Únete a Bible Challenge conmigo! Compartamos nuestra fe, juguemos juegos bíblicos y crezcamos juntos 🙏 Agrégame: @") + app.me.username;
+    function copy() {
+      try { navigator.clipboard.writeText(text + "\n" + url).then(function () { B.toast(L("Invite link copied", "Enlace copiado"), L("Paste it in WhatsApp or a text", "Pégalo en WhatsApp o en un mensaje"), "check"); }, sheetCopy); } catch (e) { sheetCopy(); }
+    }
+    function sheetCopy() { B.sheet("<h2>" + L("Invite friends", "Invitar amigos") + '</h2><p class="muted small">' + L("Copy this link and send it:", "Copia este enlace y envíalo:") + '</p><input class="input" readonly value="' + esc(url) + '" onclick="this.select()">'); }
+    if (navigator.share) navigator.share({ title: "Bible Challenge", text: text, url: url }).catch(function (e) { if (e && e.name !== "AbortError") copy(); });
+    else copy();
+  }
+  function inviteCard() {
+    return '<div class="card invite"><div class="bigicon sm">' + ic("userplus") + '</div><div style="flex:1;min-width:0"><b>' + L("Invite your friends", "Invita a tus amigos") + '</b><span>' + L("Send them a link to join you here.", "Mándales un enlace para que se unan.") + '</span></div><button class="btn gold sm" data-act="invite">' + ic("share") + L("Invite", "Invitar") + "</button></div>";
+  }
+  // opened from an invite link: show that person's profile so they can be added
+  function handleInviteParam() {
+    var m = location.search.match(/[?&]add=([a-z0-9_]{3,20})/i), name = m ? m[1].toLowerCase() : null;
+    try { if (!name) name = localStorage.getItem("bc_add"); else localStorage.setItem("bc_add", name); } catch (e) {}
+    if (!name || !app.me) return;
+    try { localStorage.removeItem("bc_add"); history.replaceState(null, "", location.pathname); } catch (e) {}
+    if (name === app.me.username) return;
+    A.searchUsers(name).then(function (rs) { var u = (rs || []).filter(function (x) { return x.username === name; })[0]; if (u) openProfile(u.id); }).catch(function () {});
+  }
+
   /* ---------------- community ---------------- */
   function communityTab(el) {
     var chips = [["all", "All", "Todo"], ["prayer", "🙏 Prayer", "🙏 Oración"], ["verse", "📖 Verses", "📖 Versículos"], ["text", "✏️ Posts", "✏️ Publicaciones"], ["score", "🏆 Games", "🏆 Juegos"]];
@@ -489,7 +516,7 @@
       $$("[data-x3]", st.body).forEach(function (b) { b.onclick = function () { pickPhoto(b.dataset.x3, function () { st.close(); openProfile(id); }); }; });
       var acts = $("#pActs", st.body);
       function paintActs(rel) {
-        if (mine) { acts.innerHTML = '<button class="btn gold sm" data-x2="edit">' + ic("edit") + L("Edit profile", "Editar perfil") + '</button><button class="btn ghost sm" data-x2="friends">' + ic("users") + L("Friends", "Amigos") + '</button><button class="btn ghost sm" data-x2="settings">' + ic("gear") + "</button>"; }
+        if (mine) { acts.innerHTML = '<button class="btn gold sm" data-x2="edit">' + ic("edit") + L("Edit profile", "Editar perfil") + '</button><button class="btn ghost sm" data-x2="friends">' + ic("users") + L("Friends", "Amigos") + '</button><button class="btn ghost sm" data-x2="invite">' + ic("share") + '</button><button class="btn ghost sm" data-x2="settings">' + ic("gear") + "</button>"; }
         else acts.innerHTML = (rel === "friend" ? '<button class="btn ghost sm" data-x2="unfriend">' + ic("usercheck") + L("Friends", "Amigos") + "</button>" + '<button class="btn gold sm" data-x2="msg">' + ic("chat") + L("Message", "Mensaje") + "</button>"
           : rel === "sent" ? '<button class="btn ghost sm" disabled>' + ic("clock") + L("Request sent", "Solicitud enviada") + "</button>"
             : rel === "received" ? '<button class="btn gold sm" data-x2="add">' + ic("usercheck") + L("Accept request", "Aceptar solicitud") + "</button>"
@@ -500,6 +527,7 @@
             var a = b.dataset.x2; B.sfx("tap");
             if (a === "edit") editProfile(function () { st.close(); openProfile(id); });
             else if (a === "settings") settings();
+            else if (a === "invite") invite();
             else if (a === "friends") friendsScreen();
             else if (a === "add") A.sendRequest(id).then(function (res) { B.sfx("good"); app.friends = null; paintActs(res === "friends" ? "friend" : "sent"); }).catch(fail);
             else if (a === "msg") { st.close(); openChat({ id: id, display_name: p.display_name, color: p.color }); }
@@ -574,8 +602,8 @@
       $$("[data-t]", st.body).forEach(function (b) { b.onclick = function () { tab = b.dataset.t; paint(); }; });
       var fb = $("#fBody", st.body);
       if (tab === "friends") loadFriends(true).then(function (fr) {
-        fb.innerHTML = fr.length ? '<div class="card">' + fr.map(function (f) { return personRow(f, f.is_parent ? L("Parent", "Papá/Mamá") : f.is_child ? L("Your child", "Tu hijo/a") : "@" + f.username, '<button class="iconbtn" data-act="chatwith" data-id="' + f.id + '" data-name="' + esc(f.display_name) + '" data-color="' + f.color + '">' + ic("chat") + "</button>"); }).join("") + "</div>"
-          : '<div class="empty">' + L("You don't have friends here yet. Search for them!", "Todavía no tienes amigos aquí. ¡Búscalos!") + "</div>";
+        fb.innerHTML = inviteCard() + (fr.length ? '<div class="card">' + fr.map(function (f) { return personRow(f, f.is_parent ? L("Parent", "Papá/Mamá") : f.is_child ? L("Your child", "Tu hijo/a") : "@" + f.username, '<button class="iconbtn" data-act="chatwith" data-id="' + f.id + '" data-name="' + esc(f.display_name) + '" data-color="' + f.color + '">' + ic("chat") + "</button>"); }).join("") + "</div>"
+          : '<div class="empty">' + L("You don't have friends here yet. Search for them!", "Todavía no tienes amigos aquí. ¡Búscalos!") + "</div>");
       });
       else if (tab === "requests") A.requests().then(function (rq) {
         fb.innerHTML = rq && rq.length ? '<div class="card">' + rq.map(function (r) { return personRow({ id: r.user_id, display_name: r.display_name, color: r.color }, "@" + r.username, '<button class="btn gold sm" data-acc="' + r.id + '">' + L("Accept", "Aceptar") + '</button><button class="iconbtn" data-dec="' + r.id + '">' + ic("close") + "</button>"); }).join("") + "</div>" : '<div class="empty">' + L("No pending requests.", "No tienes solicitudes pendientes.") + "</div>";
@@ -583,7 +611,7 @@
         $$("[data-dec]", fb).forEach(function (b) { b.onclick = function () { A.respond(b.dataset.dec, false).then(function () { loadNotif(); paint(); }).catch(fail); }; });
       }).catch(function (e) { fb.innerHTML = '<div class="empty">' + esc(errText(e)) + "</div>"; });
       else {
-        fb.innerHTML = '<div class="searchbar">' + ic("search") + '<input class="input" id="fQ" placeholder="' + L("Name or @username", "Nombre o @usuario") + '" autocapitalize="off"></div><div id="fRes" style="margin-top:12px"><p class="muted small center">' + L("Type at least 2 letters.", "Escribe al menos 2 letras.") + "</p></div>";
+        fb.innerHTML = inviteCard() + '<div class="searchbar" style="margin-top:12px">' + ic("search") + '<input class="input" id="fQ" placeholder="' + L("Name or @username", "Nombre o @usuario") + '" autocapitalize="off"></div><div id="fRes" style="margin-top:12px"><p class="muted small center">' + L("Type at least 2 letters.", "Escribe al menos 2 letras.") + "</p></div>";
         var q = $("#fQ", fb), t = null; q.focus();
         q.oninput = function () { clearTimeout(t); t = setTimeout(function () { doSearch(q.value.replace(/^@/, ""), $("#fRes", fb)); }, 300); };
       }
@@ -1068,6 +1096,7 @@
     else if (a === "bible") bibleScreen();
     else if (a.indexOf("g-") === 0) { B.sfx("tap"); window.Games[a.slice(2)](); }
     else if (a === "calendar") openCalendar();
+    else if (a === "invite") invite();
     else if (a === "mute") { R.muted = !R.muted; $$(".reel video").forEach(function (v) { v.muted = R.muted; }); paintMute(); }
     else if (a === "upreel") uploadReelSheet();
     else if (a === "rlike") likeReel(id);

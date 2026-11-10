@@ -335,3 +335,8 @@
 .bannerprev{width:100%;aspect-ratio:1200/420;border-radius:18px;background:var(--brand);background-size:cover;background-position:center}
 label.btn{cursor:pointer}
 label.btn.busy{opacity:.6;pointer-events:none}
+.card.invite{display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg,color-mix(in srgb,var(--gold) 16%,transparent),rgba(255,122,89,.08)),var(--surface)}
+.card.invite .bigicon{margin:0;flex:none;width:46px;height:46px;border-radius:14px}
+.card.invite .bigicon svg{width:22px;height:22px}
+.card.invite b{display:block;font-size:15px}
+.card.invite span{display:block;font-size:12.5px;color:var(--muted)}
