@@ -722,23 +722,40 @@
   var CALL = null;   // the call in progress (only one at a time)
   var ringer = null;
 
+  // iPhone only lets a web page play sound after a tap, so we "unlock" the speaker on the first touch
+  var RAC = null;
+  function audioCtx() { if (!RAC) { try { RAC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (RAC && RAC.state !== "running") { try { RAC.resume(); } catch (e) {} } return RAC; }
+  function unlockAudio() {
+    var ac = audioCtx(); if (!ac) return;
+    try { var b = ac.createBuffer(1, 1, 22050), src = ac.createBufferSource(); src.buffer = b; src.connect(ac.destination); src.start(0); } catch (e) {}
+  }
+  ["touchend", "pointerdown", "keydown"].forEach(function (ev) { document.addEventListener(ev, unlockAudio, { passive: true }); });
   function ringStart(outgoing) {
     ringStop();
-    var ac; try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
-    var on = true;
+    var ac = audioCtx(); if (!ac) return;
+    var on = true, master = ac.createGain(); master.gain.value = 1; master.connect(ac.destination);
+    function tone(f1, f2, at, dur, vol) {
+      [f1, f2].forEach(function (f) {
+        if (!f) return;
+        var o = ac.createOscillator(), g = ac.createGain();
+        o.type = "sine"; o.frequency.value = f;
+        g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(vol, at + .02); g.gain.setValueAtTime(vol, at + dur - .05); g.gain.linearRampToValueAtTime(0, at + dur);
+        o.connect(g); g.connect(master); o.start(at); o.stop(at + dur + .05);
+      });
+    }
     function burst() {
       if (!on) return;
-      var t = ac.currentTime;
-      (outgoing ? [[440, 0, 1.2]] : [[880, 0, .25], [660, .3, .25], [880, .6, .25], [660, .9, .25]]).forEach(function (n) {
-        var o = ac.createOscillator(), g = ac.createGain();
-        o.type = "sine"; o.frequency.value = n[0];
-        g.gain.setValueAtTime(0, t + n[1]); g.gain.linearRampToValueAtTime(outgoing ? .06 : .18, t + n[1] + .03); g.gain.linearRampToValueAtTime(0, t + n[1] + n[2]);
-        o.connect(g); g.connect(ac.destination); o.start(t + n[1]); o.stop(t + n[1] + n[2] + .05);
-      });
-      if (!outgoing && S().haptic && navigator.vibrate) navigator.vibrate([400, 200, 400]);
+      if (ac.state !== "running") { try { ac.resume(); } catch (e) {} }
+      var t = ac.currentTime + .05;
+      if (outgoing) tone(440, 480, t, 1.8, .07);                          // ring-back you hear while calling
+      else {                                                              // the phone ringing: "ring-ring … ring-ring"
+        [0, .45].forEach(function (d) { tone(784, 988, t + d, .38, .22); tone(1175, 0, t + d + .1, .25, .12); });
+        [1.1, 1.55].forEach(function (d) { tone(784, 988, t + d, .38, .22); tone(1175, 0, t + d + .1, .25, .12); });
+      }
+      if (!outgoing && S().haptic && navigator.vibrate) navigator.vibrate([500, 250, 500, 250, 500]);
     }
-    burst(); var iv = setInterval(burst, outgoing ? 3000 : 2200);
-    ringer = function () { on = false; clearInterval(iv); try { ac.close(); } catch (e) {} };
+    burst(); var iv = setInterval(burst, outgoing ? 4000 : 3000);
+    ringer = function () { on = false; clearInterval(iv); try { master.disconnect(); } catch (e) {} if (navigator.vibrate) navigator.vibrate(0); };
   }
   function ringStop() { if (ringer) { ringer(); ringer = null; } }
 
@@ -750,7 +767,11 @@
       '<video id="cLocal" autoplay playsinline muted></video>' +
       '<div class="cbar" id="cBar"></div>';
     document.body.appendChild(s);
+    clearCallNotifs();
     return s;
+  }
+  function clearCallNotifs() {
+    try { if (navigator.serviceWorker) navigator.serviceWorker.ready.then(function (r) { return r.getNotifications(); }).then(function (ns) { (ns || []).forEach(function (n) { if (n.tag && n.tag.indexOf("call-") === 0) n.close(); }); }).catch(function () {}); } catch (e) {}
   }
   function paintBar() {
     var c = CALL; if (!c) return; var bar = $("#cBar"); if (!bar) return;
@@ -863,6 +884,7 @@
       var c = CALL = { id: row.id, kind: row.kind, other: u, incoming: true, state: "ringing" };
       callScreen(c); setState(row.kind === "video" ? L("Incoming video call", "Videollamada entrante") : L("Incoming call", "Llamada entrante")); paintBar();
       ringStart(false);
+      if (!RAC || RAC.state !== "running") { var sc = $("#callScr"); if (sc) { sc.addEventListener("touchend", function once() { unlockAudio(); if (CALL === c && c.state === "ringing") ringStart(false); sc.removeEventListener("touchend", once); }); } }
       c.noAnswerT = setTimeout(function () { if (CALL === c && c.state === "ringing") endCall(L("Missed call", "Llamada perdida"), true); }, 50000);
     };
     var known = (app.friends || []).filter(function (f) { return f.id === row.caller; })[0];
